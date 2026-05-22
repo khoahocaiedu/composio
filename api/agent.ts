@@ -7,37 +7,40 @@ import { Composio } from "@composio/core";
 import { streamText } from "ai";
 import { experimental_createMCPClient as createMCPClient } from "@ai-sdk/mcp";
 
-// Tự động kiểm tra và cấu hình provider thích hợp
-const useAnthropic = !!process.env.ANTHROPIC_API_KEY;
+// Cấu hình Vercel Serverless
+export const config = {
+  maxDuration: 60, // Hỗ trợ chạy tối đa 60 giây trên Vercel
+};
 
-const anthropicProvider = useAnthropic
-  ? createAnthropic({ apiKey: process.env.ANTHROPIC_API_KEY as string })
-  : null;
+// Hàm lấy model AI, kiểm tra biến môi trường động
+function getAiModel() {
+  const useAnthropic = !!process.env.ANTHROPIC_API_KEY;
 
-const openrouterProvider = !useAnthropic
-  ? createOpenAI({
+  if (useAnthropic) {
+    const anthropicProvider = createAnthropic({ apiKey: process.env.ANTHROPIC_API_KEY as string });
+    return anthropicProvider("claude-3-5-sonnet-latest");
+  } else {
+    const openrouterKey = process.env.OPENROUTER_API_KEY;
+    if (!openrouterKey) {
+      throw new Error(
+        "Thiếu biến môi trường OPENROUTER_API_KEY. Vui lòng thêm OPENROUTER_API_KEY trong Cấu hình Biến môi trường (Environment Variables) trên Vercel Dashboard của bạn, sau đó thực hiện Redeploy dự án để áp dụng."
+      );
+    }
+    
+    const openrouterProvider = createOpenAI({
       baseURL: "https://openrouter.ai/api/v1",
-      apiKey: (process.env.OPENROUTER_API_KEY || "") as string,
+      apiKey: openrouterKey,
       headers: {
         "HTTP-Referer": "https://github.com/khoahocaiedu/composio",
         "X-Title": "Composio Agent Console",
       }
-    })
-  : null;
-
-const anthropicModel = (modelName: string) => {
-  if (useAnthropic) {
-    const realModelName = modelName === "claude-sonnet-4-6" ? "claude-3-5-sonnet-latest" : modelName;
-    return anthropicProvider!(realModelName);
-  } else {
-    // Sử dụng model tự động định tuyến miễn phí của OpenRouter (tránh lỗi 402 hết credits)
-    return openrouterProvider!.chat("openrouter/free");
+    });
+    
+    // Sử dụng model tự động định tuyến miễn phí của OpenRouter
+    return openrouterProvider.chat("openrouter/free");
   }
-};
+}
 
-export const config = {
-  maxDuration: 60, // Hỗ trợ chạy tối đa 60 giây trên Vercel
-};
 
 // Caching biến toàn cục để tái sử dụng giữa các lần gọi (Warm Start)
 let cachedTools: any = null;
@@ -73,6 +76,19 @@ export default async function handler(req: any, res: any) {
   };
 
   try {
+    // Kiểm tra các biến môi trường trước khi thực thi
+    if (!process.env.COMPOSIO_API_KEY) {
+      throw new Error(
+        "Thiếu biến môi trường COMPOSIO_API_KEY. Vui lòng thêm COMPOSIO_API_KEY trong Cấu hình Biến môi trường (Environment Variables) trên Vercel Dashboard của bạn, sau đó thực hiện Redeploy dự án để áp dụng."
+      );
+    }
+    const useAnthropic = !!process.env.ANTHROPIC_API_KEY;
+    if (!useAnthropic && !process.env.OPENROUTER_API_KEY) {
+      throw new Error(
+        "Thiếu biến môi trường OPENROUTER_API_KEY. Vui lòng thêm OPENROUTER_API_KEY trong Cấu hình Biến môi trường (Environment Variables) trên Vercel Dashboard của bạn, sau đó thực hiện Redeploy dự án để áp dụng."
+      );
+    }
+
     if (!cachedTools) {
       sendEvent("log", { message: "Khởi tạo session Composio Cloud..." });
       const composio = new Composio();
@@ -100,7 +116,7 @@ export default async function handler(req: any, res: any) {
     sendEvent("log", { message: "Đang kích hoạt mô hình AI và thực thi tác vụ..." });
 
     const result = await streamText({
-      model: anthropicModel("claude-sonnet-4-6"),
+      model: getAiModel(),
       system: "Bạn là một AI Agent đàm thoại chạy trực tiếp bằng mô hình 'openrouter/auto' và được tích hợp với các công cụ của Composio thông qua giao thức MCP. Hiện tại bạn đang kết nối trực tiếp với Composio và đã tải các công cụ thành công. Khi người dùng hỏi 'Làm sao tôi biết bạn đã kết nối đến composio' hoặc các câu hỏi tương tự về kết nối, bạn hãy trả lời xác nhận ngay rằng bạn đã kết nối thành công và sẵn sàng hoạt động (vì bạn đang có sẵn danh sách công cụ được tải trực tiếp từ Composio). Bạn KHÔNG CẦN gọi bất kỳ công cụ tìm kiếm hay công cụ kiểm tra kết nối nào của Composio để xác thực lại, hãy trả lời thẳng câu hỏi của người dùng và liệt kê ngắn gọn các ứng dụng bạn đang kết nối (ví dụ: GitHub, Google Drive, Facebook Page, Gmail). Nếu người dùng yêu cầu thực hiện một tác vụ cụ thể mà cần dùng công cụ, hãy gọi công cụ tương ứng, nhận kết quả, sau đó đưa ra câu trả lời hoàn chỉnh dựa trên kết quả đó.",
       prompt: prompt,
       tools: cachedTools,
