@@ -30,8 +30,8 @@ const anthropicModel = (modelName: string) => {
     const realModelName = modelName === "claude-sonnet-4-6" ? "claude-3-5-sonnet-latest" : modelName;
     return anthropicProvider!(realModelName);
   } else {
-    // Sử dụng model tự động định tuyến của OpenRouter
-    return openrouterProvider!("openrouter/auto");
+    // Sử dụng model tự động định tuyến của OpenRouter (sử dụng chat() thay vì languageModel() để dùng endpoint chat/completions)
+    return openrouterProvider!.chat("openrouter/auto");
   }
 };
 

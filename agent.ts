@@ -32,7 +32,7 @@ const anthropic = (modelName: string) => {
     return anthropicProvider!(realModelName);
   } else {
     // Sử dụng model tự động định tuyến của OpenRouter để tự động dùng mô hình được cấu hình trong Key Limits của bạn
-    return openrouterProvider!("openrouter/auto");
+    return openrouterProvider!.chat("openrouter/auto");
   }
 };
 
