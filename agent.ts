@@ -18,6 +18,10 @@ const openrouterProvider = !useAnthropic
   ? createOpenAI({
       baseURL: "https://openrouter.ai/api/v1",
       apiKey: (process.env.OPENROUTER_API_KEY || "") as string,
+      headers: {
+        "HTTP-Referer": "https://github.com/khoahocaiedu/composio",
+        "X-Title": "Composio Agent Console",
+      }
     })
   : null;
 
@@ -28,7 +32,7 @@ const anthropic = (modelName: string) => {
     return anthropicProvider!(realModelName);
   } else {
     // Sử dụng model tự động định tuyến của OpenRouter để tự động dùng mô hình được cấu hình trong Key Limits của bạn
-    return openrouterProvider!.chat("openrouter/auto");
+    return openrouterProvider!("openrouter/auto");
   }
 };
 
@@ -58,10 +62,11 @@ async function main() {
   console.log("Đang bắt đầu thực thi agent...");
   const stream = await streamText({
     model: anthropic("claude-sonnet-4-6"),
+    system: "Bạn là một AI Agent đàm thoại chạy trực tiếp bằng mô hình 'openrouter/auto' và được tích hợp với các công cụ của Composio thông qua giao thức MCP. Hiện tại bạn đang kết nối trực tiếp với Composio và đã tải các công cụ thành công. Khi người dùng hỏi 'Làm sao tôi biết bạn đã kết nối đến composio' hoặc các câu hỏi tương tự về kết nối, bạn hãy trả lời xác nhận ngay rằng bạn đã kết nối thành công và sẵn sàng hoạt động (vì bạn đang có sẵn danh sách công cụ được tải trực tiếp từ Composio). Bạn KHÔNG CẦN gọi bất kỳ công cụ tìm kiếm hay công cụ kiểm tra kết nối nào của Composio để xác thực lại, hãy trả lời thẳng câu hỏi của người dùng và liệt kê ngắn gọn các ứng dụng bạn đang kết nối (ví dụ: GitHub, Google Drive, Facebook Page, Gmail). Nếu người dùng yêu cầu thực hiện một tác vụ cụ thể mà cần dùng công cụ, hãy gọi công cụ tương ứng, nhận kết quả, sau đó đưa ra câu trả lời hoàn chỉnh dựa trên kết quả đó.",
     prompt: "Star the composiohq/composio repo on GitHub",
-    stopWhen: stepCountIs(10),
+    maxSteps: 10,
     tools,
-  });
+  } as any);
 
   for await (const textPart of stream.textStream) {
     process.stdout.write(textPart);
