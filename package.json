@@ -1,0 +1,27 @@
+{
+  "name": "mcp-make",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "dependencies": {
+    "@ai-sdk/anthropic": "^3.0.78",
+    "@ai-sdk/mcp": "^1.0.43",
+    "@ai-sdk/openai": "^3.0.65",
+    "@composio/core": "^0.10.0",
+    "@openrouter/sdk": "^0.12.35",
+    "ai": "^6.0.190",
+    "dotenv": "^17.4.2"
+  },
+  "devDependencies": {
+    "@types/node": "^25.9.1",
+    "tsx": "^4.22.3",
+    "typescript": "^6.0.3"
+  }
+}

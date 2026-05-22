@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Composio AI Agent Terminal</title>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      --bg-gradient: linear-gradient(135deg, #0b0813 0%, #160f29 50%, #0d091a 100%);
+      --panel-bg: rgba(26, 20, 44, 0.45);
+      --panel-border: rgba(255, 255, 255, 0.08);
+      --primary: #9d4edd;
+      --primary-glow: rgba(157, 78, 221, 0.4);
+      --secondary: #3f37c9;
+      --accent: #4cc9f0;
+      --text-main: #f3f0fc;
+      --text-muted: #a5a1b8;
+      --success: #4ad66d;
+      --error: #ff5e7e;
+      --warning: #ffb703;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg-gradient);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+    }
+
+    /* Background decorative glows */
+    .glow-orb {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(120px);
+      z-index: -1;
+      opacity: 0.3;
+      pointer-events: none;
+    }
+
+    .glow-1 {
+      top: -10%;
+      left: 15%;
+      width: 400px;
+      height: 400px;
+      background: var(--primary);
+    }
+
+    .glow-2 {
+      bottom: 10%;
+      right: 10%;
+      width: 500px;
+      height: 500px;
+      background: var(--secondary);
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1.5rem 2.5rem;
+      border-bottom: 1px solid var(--panel-border);
+      background: rgba(11, 8, 19, 0.5);
+      backdrop-filter: blur(10px);
+    }
+
+    .logo-container {
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+    }
+
+    .logo-icon {
+      width: 38px;
+      height: 38px;
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.3rem;
+      box-shadow: 0 0 15px var(--primary-glow);
+    }
+
+    .logo-text h1 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.4rem;
+      font-weight: 600;
+      background: linear-gradient(90deg, #fff, var(--text-muted));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .logo-text p {
+      font-size: 0.75rem;
+      color: var(--accent);
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      font-weight: 500;
+    }
+
+    .status-badge {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: rgba(255, 255, 255, 0.05);
+      padding: 0.5rem 1rem;
+      border-radius: 30px;
+      border: 1px solid var(--panel-border);
+      font-size: 0.85rem;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      background: var(--success);
+      border-radius: 50%;
+      box-shadow: 0 0 8px var(--success);
+      animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(0.9); opacity: 0.6; }
+      50% { transform: scale(1.1); opacity: 1; }
+      100% { transform: scale(0.9); opacity: 0.6; }
+    }
+
+    main {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 3fr 1.2fr;
+      gap: 1.5rem;
+      padding: 1.5rem 2.5rem;
+      height: calc(100vh - 85px);
+      max-width: 1600px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    @media (max-width: 1024px) {
+      main {
+        grid-template-columns: 1fr;
+        height: auto;
+        overflow-y: auto;
+      }
+    }
+
+    /* Left panel: Chat Interface */
+    .chat-panel {
+      background: var(--panel-bg);
+      border: 1px solid var(--panel-border);
+      border-radius: 20px;
+      backdrop-filter: blur(15px);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+      position: relative;
+    }
+
+    .chat-messages {
+      flex: 1;
+      padding: 1.5rem;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 1.2rem;
+    }
+
+    .message {
+      max-width: 85%;
+      padding: 1rem 1.25rem;
+      border-radius: 16px;
+      line-height: 1.5;
+      font-size: 0.95rem;
+      animation: fadeIn 0.3s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .message.user {
+      align-self: flex-end;
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      color: white;
+      border-bottom-right-radius: 4px;
+      box-shadow: 0 4px 15px rgba(157, 78, 221, 0.2);
+    }
+
+    .message.agent {
+      align-self: flex-start;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      color: var(--text-main);
+      border-bottom-left-radius: 4px;
+    }
+
+    /* Tool Call Card */
+    .tool-card {
+      margin: 0.5rem 0;
+      background: rgba(11, 8, 19, 0.4);
+      border: 1px solid rgba(157, 78, 221, 0.2);
+      border-left: 4px solid var(--primary);
+      border-radius: 8px;
+      padding: 0.8rem 1rem;
+      font-size: 0.85rem;
+    }
+
+    .tool-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 0.4rem;
+      font-weight: 600;
+      color: var(--accent);
+    }
+
+    .tool-name {
+      font-family: 'Fira Code', monospace;
+    }
+
+    .tool-status {
+      padding: 0.15rem 0.4rem;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      background: rgba(157, 78, 221, 0.1);
+    }
+
+    .tool-status.success {
+      background: rgba(74, 214, 109, 0.1);
+      color: var(--success);
+    }
+
+    .tool-args, .tool-result-box {
+      font-family: 'Fira Code', monospace;
+      font-size: 0.75rem;
+      background: rgba(0, 0, 0, 0.3);
+      padding: 0.5rem;
+      border-radius: 6px;
+      margin-top: 0.4rem;
+      color: var(--text-muted);
+      overflow-x: auto;
+      white-space: pre-wrap;
+    }
+
+    /* Suggestions bar */
+    .suggestions {
+      display: flex;
+      gap: 0.6rem;
+      padding: 0.8rem 1.5rem;
+      flex-wrap: wrap;
+      border-top: 1px solid rgba(255, 255, 255, 0.04);
+      background: rgba(0, 0, 0, 0.1);
+    }
+
+    .suggestion-btn {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      color: var(--text-muted);
+      padding: 0.4rem 0.8rem;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 0.8rem;
+      transition: all 0.2s ease;
+    }
+
+    .suggestion-btn:hover {
+      background: rgba(157, 78, 221, 0.15);
+      border-color: var(--primary);
+      color: var(--text-main);
+    }
+
+    /* Input area */
+    .chat-input-area {
+      padding: 1.2rem 1.5rem;
+      border-top: 1px solid var(--panel-border);
+      background: rgba(11, 8, 19, 0.6);
+      display: flex;
+      gap: 0.8rem;
+      align-items: center;
+    }
+
+    .chat-input {
+      flex: 1;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--panel-border);
+      border-radius: 12px;
+      padding: 0.9rem 1.2rem;
+      color: var(--text-main);
+      font-size: 0.95rem;
+      outline: none;
+      transition: all 0.3s ease;
+      font-family: 'Inter', sans-serif;
+    }
+
+    .chat-input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 10px rgba(157, 78, 221, 0.15);
+      background: rgba(255, 255, 255, 0.07);
+    }
+
+    .send-btn {
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      color: white;
+      border: none;
+      border-radius: 12px;
+      width: 50px;
+      height: 50px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 15px rgba(157, 78, 221, 0.2);
+    }
+
+    .send-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(157, 78, 221, 0.35);
+    }
+
+    .send-btn:active {
+      transform: translateY(0);
+    }
+
+    .send-btn svg {
+      width: 20px;
+      height: 20px;
+      fill: currentColor;
+    }
+
+    /* Right panel: Terminal logs & status */
+    .side-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .terminal-panel {
+      flex: 1;
+      background: rgba(11, 8, 19, 0.8);
+      border: 1px solid var(--panel-border);
+      border-radius: 20px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .terminal-header {
+      background: rgba(255, 255, 255, 0.03);
+      padding: 0.8rem 1.2rem;
+      border-bottom: 1px solid var(--panel-border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .terminal-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      font-weight: 600;
+    }
+
+    .terminal-window {
+      flex: 1;
+      padding: 1.2rem;
+      font-family: 'Fira Code', monospace;
+      font-size: 0.78rem;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+      color: #9cdcfe;
+    }
+
+    .log-entry {
+      line-height: 1.4;
+      animation: logFadeIn 0.2s ease-out;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.02);
+      padding-bottom: 0.3rem;
+    }
+
+    .log-time {
+      color: var(--text-muted);
+      margin-right: 0.5rem;
+    }
+
+    .log-text {
+      color: #e5c07b;
+    }
+
+    .log-success {
+      color: var(--success);
+    }
+
+    .log-error {
+      color: var(--error);
+    }
+
+    @keyframes logFadeIn {
+      from { opacity: 0; transform: translateX(-5px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+
+    .info-card {
+      background: var(--panel-bg);
+      border: 1px solid var(--panel-border);
+      border-radius: 20px;
+      padding: 1.2rem;
+      backdrop-filter: blur(15px);
+    }
+
+    .info-card h3 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1rem;
+      margin-bottom: 0.6rem;
+      color: var(--accent);
+    }
+
+    .info-card p {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    .info-card ul {
+      margin-top: 0.6rem;
+      margin-left: 1.2rem;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+
+    /* Scrollbar Styling */
+    ::-webkit-scrollbar {
+      width: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: rgba(0,0,0,0.1);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+  </style>
+</head>
+<body>
+  <div class="glow-orb glow-1"></div>
+  <div class="glow-orb glow-2"></div>
+
+  <header>
+    <div class="logo-container">
+      <div class="logo-icon">C</div>
+      <div class="logo-text">
+        <h1>Composio Agent Console</h1>
+        <p>Real-Time Tool Router</p>
+      </div>
+    </div>
+    <div class="status-badge">
+      <div class="status-dot"></div>
+      <span>Active Cloud Session</span>
+    </div>
+  </header>
+
+  <main>
+    <!-- Left panel: Chat Interface -->
+    <section class="chat-panel">
+      <div class="chat-messages" id="chatMessages">
+        <div class="message agent">
+          Xin chào! Tôi là Agent liên kết qua Composio. Hãy nhập yêu cầu của bạn, ví dụ: <code>Star the composiohq/composio repo on GitHub</code> hoặc bất kỳ thao tác tự động hóa nào khác.
+        </div>
+      </div>
+      
+      <div class="suggestions">
+        <button class="suggestion-btn" onclick="useSuggestion('Star the composiohq/composio repo on GitHub')">⭐ Star repository Composio</button>
+        <button class="suggestion-btn" onclick="useSuggestion('Hãy kiểm tra các bài đăng đang chờ (Pending) trong file lịch trình trên Google Drive')">📂 Đọc lịch trình trên Google Drive</button>
+        <button class="suggestion-btn" onclick="useSuggestion('Lấy thông tin tài khoản Facebook Page đã kết nối')">👤 Thông tin Facebook Page</button>
+      </div>
+
+      <div class="chat-input-area">
+        <input type="text" class="chat-input" id="chatInput" placeholder="Nhập yêu cầu tại đây..." onkeypress="handleKeyPress(event)">
+        <button class="send-btn" id="sendBtn" onclick="sendMessage()">
+          <svg viewBox="0 0 24 24">
+            <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+          </svg>
+        </button>
+      </div>
+    </section>
+
+    <!-- Right panel: Terminal logs -->
+    <section class="side-panel">
+      <div class="terminal-panel">
+        <div class="terminal-header">
+          <span class="terminal-title">System Live Stream Logs</span>
+          <span style="font-size: 0.75rem; color: var(--accent); font-family: monospace;">SSE Connect</span>
+        </div>
+        <div class="terminal-window" id="terminalWindow">
+          <div class="log-entry">
+            <span class="log-time">[SYSTEM]</span>
+            <span class="log-success">Thiết bị đầu cuối đã sẵn sàng. Chờ lệnh từ client...</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="info-card">
+        <h3>Kiến trúc Đám mây (Cloud Serverless)</h3>
+        <p>Ứng dụng này giao tiếp trực tiếp qua Vercel Serverless Function và Composio Cloud:</p>
+        <ul>
+          <li>Vercel xử lý điều phối (AI SDK + OpenRouter).</li>
+          <li>Composio quản lý quyền kết nối ứng dụng (OAuth).</li>
+          <li>Hành động thực tế diễn ra trực tiếp từ đám mây đến đích (GitHub, Drive, FB).</li>
+        </ul>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const chatMessages = document.getElementById('chatMessages');
+    const chatInput = document.getElementById('chatInput');
+    const sendBtn = document.getElementById('sendBtn');
+    const terminalWindow = document.getElementById('terminalWindow');
+
+    function appendLog(timeLabel, text, styleClass = '') {
+      const logEntry = document.createElement('div');
+      logEntry.className = `log-entry ${styleClass}`;
+      
+      const timeSpan = document.createElement('span');
+      timeSpan.className = 'log-time';
+      timeSpan.textContent = `[${timeLabel}]`;
+      
+      const textSpan = document.createElement('span');
+      textSpan.className = 'log-text-content';
+      textSpan.textContent = text;
+      
+      logEntry.appendChild(timeSpan);
+      logEntry.appendChild(textSpan);
+      terminalWindow.appendChild(logEntry);
+      terminalWindow.scrollTop = terminalWindow.scrollHeight;
+    }
+
+    function appendMessage(role, content) {
+      const msgDiv = document.createElement('div');
+      msgDiv.className = `message ${role}`;
+      msgDiv.innerHTML = content;
+      chatMessages.appendChild(msgDiv);
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+      return msgDiv;
+    }
+
+    function useSuggestion(text) {
+      chatInput.value = text;
+      chatInput.focus();
+    }
+
+    function handleKeyPress(e) {
+      if (e.key === 'Enter') {
+        sendMessage();
+      }
+    }
+
+    async function sendMessage() {
+      const prompt = chatInput.value.trim();
+      if (!prompt) return;
+
+      chatInput.value = '';
+      chatInput.disabled = true;
+      sendBtn.disabled = true;
+
+      // Add user message
+      appendMessage('user', prompt);
+      appendLog('USER', prompt);
+
+      // Create empty Agent response container
+      const agentMsgDiv = appendMessage('agent', '<span style="color:var(--text-muted)">Đang suy nghĩ...</span>');
+      let agentText = '';
+      let activeToolCard = null;
+
+      try {
+        appendLog('SYSTEM', 'Đang gửi yêu cầu đến serverless API...', 'log-text');
+        
+        const response = await fetch('/api/agent', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ prompt }),
+        });
+
+        if (!response.ok) {
+          throw new Error(`Server returned code ${response.status}`);
+        }
+
+        // Đọc stream từ Server-Sent Events (SSE) thủ công qua ReadableStream
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder('utf-8');
+        let buffer = '';
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split('\n\n');
+          buffer = lines.pop(); // giữ lại phần dư chưa hoàn thành dòng
+
+          for (const line of lines) {
+            if (!line.trim()) continue;
+            
+            // Xử lý tiền tố "data: "
+            if (line.startsWith('data: ')) {
+              try {
+                const parsed = JSON.parse(line.slice(6));
+                
+                if (parsed.type === 'log') {
+                  appendLog('AGENT-LOG', parsed.message, 'log-success');
+                } else if (parsed.type === 'text') {
+                  if (agentText === '') {
+                    agentMsgDiv.innerHTML = '';
+                  }
+                  agentText += parsed.content;
+                  // Render markdown đơn giản (chuyển đổi code block và newline)
+                  agentMsgDiv.innerHTML = agentText
+                    .replace(/\n/g, '<br>')
+                    .replace(/`([^`]+)`/g, '<code>$1</code>');
+                  chatMessages.scrollTop = chatMessages.scrollHeight;
+                } else if (parsed.type === 'tool-call') {
+                  appendLog('TOOL-CALL', `Kích hoạt công cụ: ${parsed.toolName}`, 'log-text');
+                  
+                  // Tạo tool card hiển thị trên khung chat
+                  activeToolCard = document.createElement('div');
+                  activeToolCard.className = 'tool-card';
+                  activeToolCard.innerHTML = `
+                    <div class="tool-header">
+                      <span class="tool-name">⚙️ Calling Tool: ${parsed.toolName}</span>
+                      <span class="tool-status">Đang thực thi...</span>
+                    </div>
+                    <div class="tool-args">Tham số: ${JSON.stringify(parsed.args, null, 2)}</div>
+                  `;
+                  chatMessages.appendChild(activeToolCard);
+                  chatMessages.scrollTop = chatMessages.scrollHeight;
+                } else if (parsed.type === 'tool-result') {
+                  appendLog('TOOL-RESULT', `Công cụ ${parsed.toolName} trả kết quả thành công.`, 'log-success');
+                  if (activeToolCard) {
+                    const statusSpan = activeToolCard.querySelector('.tool-status');
+                    statusSpan.textContent = 'Success';
+                    statusSpan.className = 'tool-status success';
+                    
+                    const resultBox = document.createElement('div');
+                    resultBox.className = 'tool-result-box';
+                    resultBox.textContent = `Kết quả: ${JSON.stringify(parsed.result, null, 2)}`;
+                    activeToolCard.appendChild(resultBox);
+                    activeToolCard = null;
+                  }
+                } else if (parsed.type === 'error') {
+                  appendLog('ERROR', parsed.message, 'log-error');
+                  if (agentText === '') {
+                    agentMsgDiv.innerHTML = `<span style="color:var(--error)">Lỗi: ${parsed.message}</span>`;
+                  } else {
+                    agentMsgDiv.innerHTML += `<br><span style="color:var(--error)">[Lỗi hệ thống: ${parsed.message}]</span>`;
+                  }
+                } else if (parsed.type === 'done') {
+                  appendLog('SYSTEM', parsed.message, 'log-success');
+                }
+              } catch (e) {
+                console.error("Lỗi parse dòng SSE:", e, line);
+              }
+            }
+          }
+        }
+      } catch (err) {
+        console.error("Lỗi fetch:", err);
+        appendLog('ERROR', err.message, 'log-error');
+        agentMsgDiv.innerHTML = `<span style="color:var(--error)">Lỗi kết nối API: ${err.message}</span>`;
+      } finally {
+        chatInput.disabled = false;
+        sendBtn.disabled = false;
+        chatInput.focus();
+      }
+    }
+  </script>
+</body>
+</html>

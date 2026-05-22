@@ -1,0 +1,11 @@
+node_modules/
+.env
+.venv/
+__pycache__/
+*.pyc
+*.log
+openrouter_models.json
+openrouter_user_models.json
+.git/
+dist/
+.vercel/
