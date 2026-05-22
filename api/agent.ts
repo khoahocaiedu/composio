@@ -32,6 +32,10 @@ export const config = {
   maxDuration: 60, // Hỗ trợ chạy tối đa 60 giây trên Vercel
 };
 
+// Caching biến toàn cục để tái sử dụng giữa các lần gọi (Warm Start)
+let cachedTools: any = null;
+let cachedToolCount = 0;
+
 export default async function handler(req: any, res: any) {
   // Chỉ chấp nhận phương thức POST
   if (req.method !== "POST") {
@@ -39,10 +43,15 @@ export default async function handler(req: any, res: any) {
     return;
   }
 
-  const { prompt } = req.body;
+  const { prompt, refresh } = req.body;
   if (!prompt) {
     res.status(400).json({ error: "Missing prompt in request body." });
     return;
+  }
+
+  if (refresh) {
+    cachedTools = null;
+    cachedToolCount = 0;
   }
 
   // Thiết lập Server-Sent Events (SSE) để stream dữ liệu về Client
@@ -57,32 +66,36 @@ export default async function handler(req: any, res: any) {
   };
 
   try {
-    sendEvent("log", { message: "Khởi tạo session Composio Cloud..." });
-    const composio = new Composio();
-    const userId = "user_jrw3p7i";
-    const session = await composio.create(userId);
+    if (!cachedTools) {
+      sendEvent("log", { message: "Khởi tạo session Composio Cloud..." });
+      const composio = new Composio();
+      const userId = "user_jrw3p7i";
+      const session = await composio.create(userId);
 
-    sendEvent("log", { message: "Đang kết nối đến Composio MCP Server..." });
-    const transport: any = {
-      type: session.mcp.type,
-      url: session.mcp.url,
-    };
-    if (session.mcp.headers) {
-      transport.headers = session.mcp.headers;
+      sendEvent("log", { message: "Đang kết nối đến Composio MCP Server..." });
+      const transport: any = {
+        type: session.mcp.type,
+        url: session.mcp.url,
+      };
+      if (session.mcp.headers) {
+        transport.headers = session.mcp.headers;
+      }
+      const client = await createMCPClient({ transport });
+
+      sendEvent("log", { message: "Đang tải danh sách công cụ..." });
+      cachedTools = await client.tools();
+      cachedToolCount = Object.keys(cachedTools).length;
+      sendEvent("log", { message: `Đã tải thành công ${cachedToolCount} công cụ.` });
+    } else {
+      sendEvent("log", { message: `Sử dụng ${cachedToolCount} công cụ từ bộ nhớ đệm (Cache).` });
     }
-    const client = await createMCPClient({ transport });
-
-    sendEvent("log", { message: "Đang tải danh sách công cụ..." });
-    const tools = await client.tools();
-    const toolCount = Object.keys(tools).length;
-    sendEvent("log", { message: `Đã kết nối thành công ${toolCount} công cụ.` });
 
     sendEvent("log", { message: "Đang kích hoạt mô hình AI và thực thi tác vụ..." });
 
     const result = await streamText({
       model: anthropicModel("claude-sonnet-4-6"),
       prompt: prompt,
-      tools: tools,
+      tools: cachedTools,
     });
 
     for await (const chunk of result.fullStream) {
