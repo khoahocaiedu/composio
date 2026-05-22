@@ -31,8 +31,8 @@ const anthropic = (modelName: string) => {
     const realModelName = modelName === "claude-sonnet-4-6" ? "claude-3-5-sonnet-latest" : modelName;
     return anthropicProvider!(realModelName);
   } else {
-    // Sử dụng model tự động định tuyến của OpenRouter để tự động dùng mô hình được cấu hình trong Key Limits của bạn
-    return openrouterProvider!.chat("openrouter/auto");
+    // Sử dụng model tự động định tuyến miễn phí của OpenRouter (tránh lỗi 402 hết credits)
+    return openrouterProvider!.chat("openrouter/free");
   }
 };
 
