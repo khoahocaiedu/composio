@@ -31,8 +31,8 @@ function getAiModel() {
       }
     });
     
-    // Sử dụng GLM 4.5 Air miễn phí - model cực kỳ mạnh mẽ hỗ trợ tool calling rất tốt trên OpenRouter
-    return openrouterProvider.chat("z-ai/glm-4.5-air:free");
+    // Sử dụng model tự động định tuyến của OpenRouter
+    return openrouterProvider.chat("openrouter/auto");
   }
 }
 
