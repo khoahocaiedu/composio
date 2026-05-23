@@ -3,26 +3,30 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Composio AI Agent Terminal</title>
+  <title>Composio AI Agent Dashboard</title>
+  
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
   
   <style>
     :root {
-      --bg-gradient: linear-gradient(135deg, #0b0813 0%, #160f29 50%, #0d091a 100%);
-      --panel-bg: rgba(26, 20, 44, 0.45);
-      --panel-border: rgba(255, 255, 255, 0.08);
-      --primary: #9d4edd;
-      --primary-glow: rgba(157, 78, 221, 0.4);
-      --secondary: #3f37c9;
-      --accent: #4cc9f0;
-      --text-main: #f3f0fc;
-      --text-muted: #a5a1b8;
-      --success: #4ad66d;
-      --error: #ff5e7e;
-      --warning: #ffb703;
+      --bg-color: #0b0b0e;
+      --sidebar-bg: #121216;
+      --panel-bg: rgba(20, 20, 26, 0.6);
+      --panel-border: rgba(255, 255, 255, 0.05);
+      --primary: #10b981; /* Glowing intelligence green */
+      --primary-glow: rgba(16, 185, 129, 0.25);
+      --secondary: #6366f1; /* Intelligence purple/blue */
+      --secondary-glow: rgba(99, 102, 241, 0.2);
+      --text-main: #f4f4f7;
+      --text-muted: #8e8e9f;
+      --text-disabled: #4e4e5a;
+      --success: #34d399;
+      --error: #f87171;
+      --warning: #fbbf24;
+      --font-main: 'Plus Jakarta Sans', sans-serif;
     }
 
     * {
@@ -32,341 +36,798 @@
     }
 
     body {
-      font-family: 'Inter', sans-serif;
-      background: var(--bg-gradient);
+      font-family: var(--font-main);
+      background-color: var(--bg-color);
       color: var(--text-main);
-      min-height: 100vh;
+      height: 100vh;
       display: flex;
       flex-direction: column;
-      overflow-x: hidden;
+      overflow: hidden;
+      position: relative;
     }
 
-    /* Background decorative glows */
-    .glow-orb {
+    /* Ambient blur backdrops */
+    .glowing-blob {
       position: absolute;
       border-radius: 50%;
-      filter: blur(120px);
-      z-index: -1;
-      opacity: 0.3;
+      filter: blur(140px);
       pointer-events: none;
+      z-index: 0;
+      opacity: 0.2;
     }
 
-    .glow-1 {
+    .blob-1 {
       top: -10%;
-      left: 15%;
-      width: 400px;
-      height: 400px;
+      left: 30%;
+      width: 500px;
+      height: 500px;
       background: var(--primary);
     }
 
-    .glow-2 {
-      bottom: 10%;
-      right: 10%;
-      width: 500px;
-      height: 500px;
+    .blob-2 {
+      bottom: -10%;
+      right: 15%;
+      width: 600px;
+      height: 600px;
       background: var(--secondary);
     }
 
-    header {
+    /* Outer Wrapper */
+    .app-container {
       display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 1.5rem 2.5rem;
+      flex: 1;
+      height: 100vh;
+      z-index: 1;
+      position: relative;
+    }
+
+    /* ==========================================================================
+       LEFT SIDEBAR: Connection Manager & Presets
+       ========================================================================== */
+    .left-sidebar {
+      width: 280px;
+      background-color: var(--sidebar-bg);
+      border-right: 1px solid var(--panel-border);
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      z-index: 10;
+      transition: transform 0.3s ease;
+    }
+
+    .sidebar-header {
+      padding: 1.5rem 1.25rem;
       border-bottom: 1px solid var(--panel-border);
-      background: rgba(11, 8, 19, 0.5);
-      backdrop-filter: blur(10px);
-    }
-
-    .logo-container {
       display: flex;
       align-items: center;
-      gap: 0.8rem;
+      gap: 0.75rem;
     }
 
-    .logo-icon {
-      width: 38px;
-      height: 38px;
-      background: linear-gradient(135deg, var(--primary), var(--accent));
+    .app-logo {
+      width: 34px;
+      height: 34px;
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
       border-radius: 10px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-weight: bold;
-      font-family: 'Outfit', sans-serif;
-      font-size: 1.3rem;
-      box-shadow: 0 0 15px var(--primary-glow);
+      color: #fff;
+      font-weight: 700;
+      font-size: 1.1rem;
+      box-shadow: 0 0 20px var(--primary-glow);
     }
 
-    .logo-text h1 {
-      font-family: 'Outfit', sans-serif;
-      font-size: 1.4rem;
-      font-weight: 600;
-      background: linear-gradient(90deg, #fff, var(--text-muted));
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-    }
-
-    .logo-text p {
-      font-size: 0.75rem;
-      color: var(--accent);
-      letter-spacing: 1px;
-      text-transform: uppercase;
-      font-weight: 500;
-    }
-
-    .status-badge {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      background: rgba(255, 255, 255, 0.05);
-      padding: 0.5rem 1rem;
-      border-radius: 30px;
-      border: 1px solid var(--panel-border);
-      font-size: 0.85rem;
-    }
-
-    .status-dot {
-      width: 8px;
-      height: 8px;
-      background: var(--success);
-      border-radius: 50%;
-      box-shadow: 0 0 8px var(--success);
-      animation: pulse 1.5s infinite;
-    }
-
-    @keyframes pulse {
-      0% { transform: scale(0.9); opacity: 0.6; }
-      50% { transform: scale(1.1); opacity: 1; }
-      100% { transform: scale(0.9); opacity: 0.6; }
-    }
-
-    main {
-      flex: 1;
-      display: grid;
-      grid-template-columns: 3fr 1.2fr;
-      gap: 1.5rem;
-      padding: 1.5rem 2.5rem;
-      height: calc(100vh - 85px);
-      max-width: 1600px;
-      margin: 0 auto;
-      width: 100%;
-    }
-
-    @media (max-width: 1024px) {
-      main {
-        grid-template-columns: 1fr;
-        height: auto;
-        overflow-y: auto;
-      }
-    }
-
-    /* Left panel: Chat Interface */
-    .chat-panel {
-      background: var(--panel-bg);
-      border: 1px solid var(--panel-border);
-      border-radius: 20px;
-      backdrop-filter: blur(15px);
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-      position: relative;
-    }
-
-    .chat-messages {
-      flex: 1;
-      padding: 1.5rem;
-      overflow-y: auto;
-      display: flex;
-      flex-direction: column;
-      gap: 1.2rem;
-    }
-
-    .message {
-      max-width: 85%;
-      padding: 1rem 1.25rem;
-      border-radius: 16px;
-      line-height: 1.5;
+    .app-title h2 {
       font-size: 0.95rem;
-      animation: fadeIn 0.3s ease-out;
+      font-weight: 600;
+      letter-spacing: -0.3px;
     }
 
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(8px); }
-      to { opacity: 1; transform: translateY(0); }
+    .app-title p {
+      font-size: 0.7rem;
+      color: var(--primary);
+      text-transform: uppercase;
+      font-weight: 600;
+      letter-spacing: 0.5px;
     }
 
-    .message.user {
-      align-self: flex-end;
-      background: linear-gradient(135deg, var(--primary), var(--secondary));
-      color: white;
-      border-bottom-right-radius: 4px;
-      box-shadow: 0 4px 15px rgba(157, 78, 221, 0.2);
+    .sidebar-section {
+      padding: 1.25rem;
+      border-bottom: 1px solid var(--panel-border);
     }
 
-    .message.agent {
-      align-self: flex-start;
-      background: rgba(255, 255, 255, 0.04);
-      border: 1px solid rgba(255, 255, 255, 0.06);
-      color: var(--text-main);
-      border-bottom-left-radius: 4px;
+    .section-title {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-muted);
+      margin-bottom: 0.75rem;
+      font-weight: 700;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
     }
 
-    /* Tool Call Card */
-    .tool-card {
-      margin: 0.5rem 0;
-      background: rgba(11, 8, 19, 0.4);
-      border: 1px solid rgba(157, 78, 221, 0.2);
-      border-left: 4px solid var(--primary);
-      border-radius: 8px;
-      padding: 0.8rem 1rem;
-      font-size: 0.85rem;
+    /* Connection List */
+    .connection-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
     }
 
-    .tool-header {
+    .conn-item {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      margin-bottom: 0.4rem;
-      font-weight: 600;
-      color: var(--accent);
-    }
-
-    .tool-name {
-      font-family: 'Fira Code', monospace;
-    }
-
-    .tool-status {
-      padding: 0.15rem 0.4rem;
-      border-radius: 4px;
-      font-size: 0.75rem;
-      background: rgba(157, 78, 221, 0.1);
-    }
-
-    .tool-status.success {
-      background: rgba(74, 214, 109, 0.1);
-      color: var(--success);
-    }
-
-    .tool-args, .tool-result-box {
-      font-family: 'Fira Code', monospace;
-      font-size: 0.75rem;
-      background: rgba(0, 0, 0, 0.3);
-      padding: 0.5rem;
-      border-radius: 6px;
-      margin-top: 0.4rem;
-      color: var(--text-muted);
-      overflow-x: auto;
-      white-space: pre-wrap;
-    }
-
-    /* Suggestions bar */
-    .suggestions {
-      display: flex;
-      gap: 0.6rem;
-      padding: 0.8rem 1.5rem;
-      flex-wrap: wrap;
-      border-top: 1px solid rgba(255, 255, 255, 0.04);
-      background: rgba(0, 0, 0, 0.1);
-    }
-
-    .suggestion-btn {
-      background: rgba(255, 255, 255, 0.04);
-      border: 1px solid rgba(255, 255, 255, 0.06);
-      color: var(--text-muted);
-      padding: 0.4rem 0.8rem;
-      border-radius: 20px;
-      cursor: pointer;
-      font-size: 0.8rem;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.03);
+      padding: 0.6rem 0.8rem;
+      border-radius: 8px;
+      font-size: 0.82rem;
       transition: all 0.2s ease;
     }
 
-    .suggestion-btn:hover {
-      background: rgba(157, 78, 221, 0.15);
-      border-color: var(--primary);
-      color: var(--text-main);
+    .conn-item:hover {
+      background: rgba(255, 255, 255, 0.05);
+      border-color: rgba(255, 255, 255, 0.08);
     }
 
-    /* Input area */
-    .chat-input-area {
-      padding: 1.2rem 1.5rem;
-      border-top: 1px solid var(--panel-border);
-      background: rgba(11, 8, 19, 0.6);
+    .conn-info {
       display: flex;
-      gap: 0.8rem;
       align-items: center;
+      gap: 0.6rem;
     }
 
-    .chat-input {
-      flex: 1;
-      background: rgba(255, 255, 255, 0.04);
-      border: 1px solid var(--panel-border);
-      border-radius: 12px;
-      padding: 0.9rem 1.2rem;
-      color: var(--text-main);
-      font-size: 0.95rem;
-      outline: none;
-      transition: all 0.3s ease;
-      font-family: 'Inter', sans-serif;
-    }
-
-    .chat-input:focus {
-      border-color: var(--primary);
-      box-shadow: 0 0 10px rgba(157, 78, 221, 0.15);
-      background: rgba(255, 255, 255, 0.07);
-    }
-
-    .send-btn {
-      background: linear-gradient(135deg, var(--primary), var(--secondary));
-      color: white;
-      border: none;
-      border-radius: 12px;
-      width: 50px;
-      height: 50px;
-      cursor: pointer;
+    .conn-icon {
+      width: 20px;
+      height: 20px;
       display: flex;
       align-items: center;
       justify-content: center;
-      transition: all 0.3s ease;
-      box-shadow: 0 4px 15px rgba(157, 78, 221, 0.2);
+      opacity: 0.8;
     }
 
-    .send-btn:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 6px 20px rgba(157, 78, 221, 0.35);
+    .conn-status {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      font-size: 0.72rem;
+      color: var(--text-muted);
     }
 
-    .send-btn:active {
-      transform: translateY(0);
+    .status-indicator {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--text-disabled);
     }
 
-    .send-btn svg {
-      width: 20px;
-      height: 20px;
-      fill: currentColor;
+    .status-indicator.active {
+      background: var(--success);
+      box-shadow: 0 0 6px var(--success);
+      animation: statusPulse 2s infinite;
     }
 
-    /* Right panel: Terminal logs & status */
-    .side-panel {
+    @keyframes statusPulse {
+      0% { opacity: 0.4; }
+      50% { opacity: 1; }
+      100% { opacity: 0.4; }
+    }
+
+    /* Library Options */
+    .preset-list {
       display: flex;
       flex-direction: column;
-      gap: 1.5rem;
+      gap: 0.4rem;
+      max-height: 250px;
+      overflow-y: auto;
     }
 
-    .terminal-panel {
+    .preset-btn {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      padding: 0.5rem 0.6rem;
+      border-radius: 6px;
+      text-align: left;
+      font-size: 0.8rem;
+      cursor: pointer;
+      width: 100%;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      transition: all 0.2s ease;
+      font-family: var(--font-main);
+    }
+
+    .preset-btn:hover {
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--text-main);
+    }
+
+    .sidebar-footer {
+      margin-top: auto;
+      padding: 1rem 1.25rem;
+      border-top: 1px solid var(--panel-border);
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .user-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--secondary), var(--primary));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #fff;
+    }
+
+    .user-info {
+      font-size: 0.8rem;
+    }
+
+    .user-info p {
+      font-weight: 500;
+    }
+
+    .user-info span {
+      font-size: 0.68rem;
+      color: var(--text-muted);
+    }
+
+    /* ==========================================================================
+       MAIN PANEL: Workspace & Chat Box
+       ========================================================================== */
+    .main-workspace {
       flex: 1;
-      background: rgba(11, 8, 19, 0.8);
-      border: 1px solid var(--panel-border);
-      border-radius: 20px;
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
       display: flex;
       flex-direction: column;
+      background-color: transparent;
+      height: 100vh;
+      position: relative;
+    }
+
+    .main-header {
+      height: 60px;
+      border-bottom: 1px solid var(--panel-border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 1.5rem;
+      background: rgba(11, 11, 14, 0.2);
+      backdrop-filter: blur(12px);
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .panel-toggle {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      padding: 0.4rem;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+    }
+
+    .panel-toggle:hover {
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text-main);
+    }
+
+    .model-selector {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--panel-border);
+      padding: 0.35rem 0.8rem;
+      border-radius: 8px;
+      font-size: 0.8rem;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: var(--text-main);
+    }
+
+    .model-selector-indicator {
+      width: 7px;
+      height: 7px;
+      background-color: var(--secondary);
+      border-radius: 50%;
+      box-shadow: 0 0 6px var(--secondary);
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--panel-border);
+      color: var(--text-main);
+      font-size: 0.78rem;
+      padding: 0.4rem 0.8rem;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 500;
+      transition: all 0.2s ease;
+      font-family: var(--font-main);
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    /* Chat Area */
+    .chat-container {
+      flex: 1;
+      overflow-y: auto;
+      padding: 2rem 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .chat-content-width {
+      width: 100%;
+      max-width: 720px;
+      padding: 0 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.75rem;
+    }
+
+    /* Message Bubbles - ChatGPT style (No heavy boxes, clean typography) */
+    .msg-wrapper {
+      display: flex;
+      gap: 1.25rem;
+      width: 100%;
+      animation: msgFadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes msgFadeIn {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .msg-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      font-size: 0.75rem;
+    }
+
+    .msg-wrapper.user .msg-avatar {
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text-main);
+      order: 2;
+    }
+
+    .msg-wrapper.agent .msg-avatar {
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      color: #fff;
+      order: 1;
+      box-shadow: 0 0 12px var(--primary-glow);
+    }
+
+    .msg-bubble {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      min-width: 0;
+    }
+
+    .msg-wrapper.user .msg-bubble {
+      align-items: flex-end;
+      order: 1;
+      text-align: right;
+    }
+
+    .msg-wrapper.agent .msg-bubble {
+      align-items: flex-start;
+      order: 2;
+      text-align: left;
+    }
+
+    .msg-sender {
+      font-size: 0.72rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-muted);
+    }
+
+    .msg-text {
+      font-size: 0.95rem;
+      line-height: 1.6;
+      color: var(--text-main);
+      word-break: break-word;
+    }
+
+    .msg-wrapper.user .msg-text-box {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--panel-border);
+      padding: 0.75rem 1.1rem;
+      border-radius: 16px;
+      border-top-right-radius: 2px;
+      display: inline-block;
+      max-width: 85%;
+    }
+
+    /* Enhanced Markdown Render Styles */
+    .msg-text p {
+      margin-bottom: 0.75rem;
+    }
+    .msg-text p:last-child {
+      margin-bottom: 0;
+    }
+    .msg-text code {
+      font-family: 'Fira Code', monospace;
+      font-size: 0.8rem;
+      background: rgba(255, 255, 255, 0.06);
+      padding: 0.15rem 0.35rem;
+      border-radius: 4px;
+      color: var(--primary);
+    }
+    .msg-text pre {
+      margin: 0.8rem 0;
+      background: #141418;
+      border: 1px solid var(--panel-border);
+      border-radius: 8px;
+      padding: 0.8rem;
+      overflow-x: auto;
+    }
+    .msg-text pre code {
+      background: none;
+      padding: 0;
+      color: #a5e844;
+      font-size: 0.78rem;
+    }
+    .msg-text ul, .msg-text ol {
+      margin-left: 1.25rem;
+      margin-bottom: 0.75rem;
+    }
+    .msg-text li {
+      margin-bottom: 0.25rem;
+    }
+
+    /* COLLAPSIBLE THINKING ACCORDION */
+    .thinking-accordion {
+      width: 100%;
+      background: rgba(255, 255, 255, 0.01);
+      border: 1px solid rgba(255, 255, 255, 0.03);
+      border-radius: 10px;
+      margin-bottom: 0.5rem;
       overflow: hidden;
     }
 
-    .terminal-header {
+    .thinking-header {
+      padding: 0.6rem 0.9rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      background: rgba(255, 255, 255, 0.015);
+      user-select: none;
+    }
+
+    .thinking-header:hover {
       background: rgba(255, 255, 255, 0.03);
-      padding: 0.8rem 1.2rem;
+    }
+
+    .thinking-title-box {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+
+    .thinking-spinner {
+      width: 12px;
+      height: 12px;
+      border: 1.5px solid var(--text-muted);
+      border-top-color: transparent;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    .thinking-spinner.done {
+      border: none;
+      background: var(--success);
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      box-shadow: 0 0 6px var(--success);
+      animation: none;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .thinking-arrow {
+      width: 16px;
+      height: 16px;
+      fill: var(--text-muted);
+      transition: transform 0.2s ease;
+    }
+
+    .thinking-accordion.open .thinking-arrow {
+      transform: rotate(180deg);
+    }
+
+    .thinking-content {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      background: rgba(0, 0, 0, 0.15);
+    }
+
+    .thinking-accordion.open .thinking-content {
+      max-height: 250px;
+      overflow-y: auto;
+    }
+
+    .thinking-inner {
+      padding: 0.75rem 0.9rem;
+      font-family: 'Fira Code', monospace;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+
+    /* COLLAPSIBLE TOOL CARD */
+    .tool-accordion {
+      width: 100%;
+      background: rgba(16, 185, 129, 0.02);
+      border: 1px solid rgba(16, 185, 129, 0.1);
+      border-left: 3px solid var(--primary);
+      border-radius: 8px;
+      margin: 0.5rem 0;
+      overflow: hidden;
+    }
+
+    .tool-header {
+      padding: 0.5rem 0.8rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .tool-header:hover {
+      background: rgba(16, 185, 129, 0.04);
+    }
+
+    .tool-title-box {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      font-family: 'Fira Code', monospace;
+      color: var(--primary);
+    }
+
+    .tool-badge {
+      font-size: 0.65rem;
+      padding: 0.1rem 0.4rem;
+      border-radius: 4px;
+      background: rgba(16, 185, 129, 0.1);
+      color: var(--success);
+    }
+
+    .tool-badge.running {
+      background: rgba(99, 102, 241, 0.1);
+      color: var(--secondary);
+    }
+
+    .tool-content {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.2s ease-out;
+      background: rgba(0, 0, 0, 0.2);
+    }
+
+    .tool-accordion.open .tool-content {
+      max-height: 400px;
+      overflow-y: auto;
+    }
+
+    .tool-body {
+      padding: 0.75rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+    }
+
+    .tool-code-block {
+      font-family: 'Fira Code', monospace;
+      font-size: 0.72rem;
+      background: rgba(0, 0, 0, 0.4);
+      padding: 0.5rem;
+      border-radius: 5px;
+      overflow-x: auto;
+      white-space: pre-wrap;
+      border: 1px solid rgba(255, 255, 255, 0.02);
+    }
+
+    .tool-code-title {
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-muted);
+      margin-bottom: 0.2rem;
+      font-weight: bold;
+    }
+
+    /* Input Capsule Container */
+    .input-wrapper {
+      width: 100%;
+      padding: 0 1.5rem 1.5rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background: linear-gradient(to top, var(--bg-color) 80%, transparent 100%);
+      z-index: 10;
+    }
+
+    .input-capsule {
+      width: 100%;
+      max-width: 720px;
+      background: rgba(26, 26, 32, 0.85);
+      border: 1px solid var(--panel-border);
+      border-radius: 24px;
+      padding: 0.75rem 1rem 0.75rem 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+      transition: border-color 0.3s ease, box-shadow 0.3s ease;
+      backdrop-filter: blur(20px);
+    }
+
+    .input-capsule:focus-within {
+      border-color: rgba(99, 102, 241, 0.4);
+      box-shadow: 0 10px 40px rgba(99, 102, 241, 0.08), 0 0 0 1px rgba(99, 102, 241, 0.2);
+    }
+
+    .input-row {
+      display: flex;
+      align-items: flex-end;
+      gap: 0.75rem;
+    }
+
+    .chat-textarea {
+      flex: 1;
+      background: none;
+      border: none;
+      outline: none;
+      resize: none;
+      color: var(--text-main);
+      font-size: 0.95rem;
+      font-family: var(--font-main);
+      line-height: 1.5;
+      max-height: 200px;
+      padding: 0.25rem 0;
+      height: 24px;
+    }
+
+    .chat-textarea::placeholder {
+      color: var(--text-muted);
+    }
+
+    .input-actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-top: 0.25rem;
+      border-top: 1px solid rgba(255, 255, 255, 0.02);
+    }
+
+    .action-icons-left {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .action-btn {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      padding: 0.4rem;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+    }
+
+    .action-btn:hover {
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text-main);
+    }
+
+    .btn-send {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: #fff;
+      color: #000;
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .btn-send:hover {
+      background: #e4e4e7;
+      transform: scale(1.05);
+    }
+
+    .btn-send:disabled {
+      background: var(--text-disabled);
+      color: var(--sidebar-bg);
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .btn-send svg {
+      width: 14px;
+      height: 14px;
+      fill: currentColor;
+    }
+
+    .footer-note {
+      font-size: 0.68rem;
+      color: var(--text-muted);
+      margin-top: 0.5rem;
+      text-align: center;
+    }
+
+    /* ==========================================================================
+       RIGHT SIDEBAR: Terminal live logs
+       ========================================================================== */
+    .right-sidebar {
+      width: 340px;
+      background-color: var(--sidebar-bg);
+      border-left: 1px solid var(--panel-border);
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      z-index: 10;
+      transition: transform 0.3s ease;
+    }
+
+    .terminal-header {
+      padding: 1.15rem 1.25rem;
       border-bottom: 1px solid var(--panel-border);
       display: flex;
       align-items: center;
@@ -374,249 +835,486 @@
     }
 
     .terminal-title {
-      font-family: 'Outfit', sans-serif;
-      font-size: 0.85rem;
-      color: var(--text-muted);
+      font-size: 0.72rem;
       text-transform: uppercase;
-      letter-spacing: 1px;
-      font-weight: 600;
+      letter-spacing: 0.8px;
+      font-weight: 700;
+      color: var(--text-muted);
     }
 
-    .terminal-window {
+    .terminal-body {
       flex: 1;
-      padding: 1.2rem;
+      padding: 1.25rem;
       font-family: 'Fira Code', monospace;
-      font-size: 0.78rem;
+      font-size: 0.72rem;
       overflow-y: auto;
       display: flex;
       flex-direction: column;
-      gap: 0.6rem;
-      color: #9cdcfe;
+      gap: 0.5rem;
+      background: #09090b;
     }
 
-    .log-entry {
+    .log-item {
       line-height: 1.4;
-      animation: logFadeIn 0.2s ease-out;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.02);
-      padding-bottom: 0.3rem;
+      animation: logFade 0.2s ease-out;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.01);
+      padding-bottom: 0.25rem;
     }
 
-    .log-time {
-      color: var(--text-muted);
-      margin-right: 0.5rem;
-    }
-
-    .log-text {
-      color: #e5c07b;
-    }
-
-    .log-success {
-      color: var(--success);
-    }
-
-    .log-error {
-      color: var(--error);
-    }
-
-    @keyframes logFadeIn {
-      from { opacity: 0; transform: translateX(-5px); }
+    @keyframes logFade {
+      from { opacity: 0; transform: translateX(6px); }
       to { opacity: 1; transform: translateX(0); }
     }
 
-    .info-card {
-      background: var(--panel-bg);
-      border: 1px solid var(--panel-border);
-      border-radius: 20px;
-      padding: 1.2rem;
-      backdrop-filter: blur(15px);
-    }
-
-    .info-card h3 {
-      font-family: 'Outfit', sans-serif;
-      font-size: 1rem;
-      margin-bottom: 0.6rem;
-      color: var(--accent);
-    }
-
-    .info-card p {
-      font-size: 0.82rem;
+    .log-tag {
       color: var(--text-muted);
-      line-height: 1.5;
+      margin-right: 0.4rem;
+      font-weight: bold;
     }
 
-    .info-card ul {
-      margin-top: 0.6rem;
-      margin-left: 1.2rem;
-      font-size: 0.8rem;
-      color: var(--text-muted);
-      display: flex;
-      flex-direction: column;
-      gap: 0.4rem;
+    .log-content {
+      color: #9cdcfe;
     }
 
-    /* Scrollbar Styling */
+    .log-tag.success { color: var(--success); }
+    .log-tag.error { color: var(--error); }
+    .log-tag.system { color: var(--secondary); }
+
+    /* Responsive collapsible sidebar states */
+    .left-sidebar.hidden {
+      display: none;
+    }
+    .right-sidebar.hidden {
+      display: none;
+    }
+
+    @media (max-width: 1024px) {
+      .left-sidebar {
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        transform: translateX(-100%);
+      }
+      .left-sidebar.open {
+        transform: translateX(0);
+      }
+      .right-sidebar {
+        position: absolute;
+        right: 0;
+        top: 0;
+        bottom: 0;
+        transform: translateX(100%);
+      }
+      .right-sidebar.open {
+        transform: translateX(0);
+      }
+    }
+
+    /* Scrollbar styling */
     ::-webkit-scrollbar {
-      width: 6px;
+      width: 4px;
+      height: 4px;
     }
     ::-webkit-scrollbar-track {
-      background: rgba(0,0,0,0.1);
+      background: transparent;
     }
     ::-webkit-scrollbar-thumb {
-      background: rgba(255, 255, 255, 0.1);
-      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 4px;
     }
     ::-webkit-scrollbar-thumb:hover {
-      background: rgba(255, 255, 255, 0.2);
+      background: rgba(255, 255, 255, 0.15);
     }
   </style>
 </head>
 <body>
-  <div class="glow-orb glow-1"></div>
-  <div class="glow-orb glow-2"></div>
+  <div class="glowing-blob blob-1"></div>
+  <div class="glowing-blob blob-2"></div>
 
-  <header>
-    <div class="logo-container">
-      <div class="logo-icon">C</div>
-      <div class="logo-text">
-        <h1>Composio Agent Console</h1>
-        <p>Real-Time Tool Router</p>
-      </div>
-    </div>
-    <div class="status-badge">
-      <div class="status-dot"></div>
-      <span>Active Cloud Session</span>
-    </div>
-  </header>
-
-  <main>
-    <!-- Left panel: Chat Interface -->
-    <section class="chat-panel">
-      <div class="chat-messages" id="chatMessages">
-        <div class="message agent">
-          Xin chào! Tôi là Agent liên kết qua Composio. Hãy nhập yêu cầu của bạn, ví dụ: <code>Star the composiohq/composio repo on GitHub</code> hoặc bất kỳ thao tác tự động hóa nào khác.
+  <div class="app-container">
+    
+    <!-- LEFT SIDEBAR: Connection status & Presets -->
+    <aside class="left-sidebar" id="leftSidebar">
+      <div class="sidebar-header">
+        <div class="app-logo">C</div>
+        <div class="app-title">
+          <h2>Composio Agent</h2>
+          <p>Console v5.5</p>
         </div>
       </div>
-      
-      <div class="suggestions">
-        <button class="suggestion-btn" onclick="useSuggestion('Star the composiohq/composio repo on GitHub')">⭐ Star repository Composio</button>
-        <button class="suggestion-btn" onclick="useSuggestion('Hãy kiểm tra các bài đăng đang chờ (Pending) trong file lịch trình trên Google Drive')">📂 Đọc lịch trình trên Google Drive</button>
-        <button class="suggestion-btn" onclick="useSuggestion('Lấy thông tin tài khoản Facebook Page đã kết nối')">👤 Thông tin Facebook Page</button>
-      </div>
 
-      <div class="chat-input-area">
-        <input type="text" class="chat-input" id="chatInput" placeholder="Nhập yêu cầu tại đây..." onkeypress="handleKeyPress(event)">
-        <button class="send-btn" id="sendBtn" onclick="sendMessage()">
-          <svg viewBox="0 0 24 24">
-            <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
-          </svg>
-        </button>
-      </div>
-    </section>
-
-    <!-- Right panel: Terminal logs -->
-    <section class="side-panel">
-      <div class="terminal-panel">
-        <div class="terminal-header">
-          <span class="terminal-title">System Live Stream Logs</span>
-          <span style="font-size: 0.75rem; color: var(--accent); font-family: monospace;">SSE Connect</span>
+      <!-- Active Connection Status Cards -->
+      <div class="sidebar-section">
+        <div class="section-title">
+          <span>Connected Toolkits</span>
+          <span style="font-size: 0.65rem; color: var(--success); font-weight: 500;">Online</span>
         </div>
-        <div class="terminal-window" id="terminalWindow">
-          <div class="log-entry">
-            <span class="log-time">[SYSTEM]</span>
-            <span class="log-success">Thiết bị đầu cuối đã sẵn sàng. Chờ lệnh từ client...</span>
+        <div class="connection-list">
+          <div class="conn-item">
+            <div class="conn-info">
+              <span class="conn-icon">✉️</span>
+              <span>Gmail Toolkit</span>
+            </div>
+            <div class="conn-status">
+              <span class="status-indicator active"></span>
+              <span>Active</span>
+            </div>
+          </div>
+          <div class="conn-item">
+            <div class="conn-info">
+              <span class="conn-icon">🐙</span>
+              <span>GitHub API</span>
+            </div>
+            <div class="conn-status">
+              <span class="status-indicator active"></span>
+              <span>Active</span>
+            </div>
+          </div>
+          <div class="conn-item">
+            <div class="conn-info">
+              <span class="conn-icon">📂</span>
+              <span>Google Drive</span>
+            </div>
+            <div class="conn-status">
+              <span class="status-indicator active"></span>
+              <span>Active</span>
+            </div>
+          </div>
+          <div class="conn-item">
+            <div class="conn-info">
+              <span class="conn-icon">📊</span>
+              <span>Google Sheets</span>
+            </div>
+            <div class="conn-status">
+              <span class="status-indicator active"></span>
+              <span>Active</span>
+            </div>
+          </div>
+          <div class="conn-item">
+            <div class="conn-info">
+              <span class="conn-icon">👥</span>
+              <span>Facebook Page</span>
+            </div>
+            <div class="conn-status">
+              <span class="status-indicator active"></span>
+              <span>Active</span>
+            </div>
           </div>
         </div>
       </div>
 
-      <div class="info-card">
-        <h3>Kiến trúc Đám mây (Cloud Serverless)</h3>
-        <p>Ứng dụng này giao tiếp trực tiếp qua Vercel Serverless Function và Composio Cloud:</p>
-        <ul>
-          <li>Vercel xử lý điều phối (AI SDK + OpenRouter).</li>
-          <li>Composio quản lý quyền kết nối ứng dụng (OAuth).</li>
-          <li>Hành động thực tế diễn ra trực tiếp từ đám mây đến đích (GitHub, Drive, FB).</li>
-        </ul>
+      <!-- Prompt Presets / Library -->
+      <div class="sidebar-section" style="flex: 1; overflow-y: auto;">
+        <div class="section-title">
+          <span>Prompt Library</span>
+        </div>
+        <div class="preset-list">
+          <button class="preset-btn" onclick="usePreset('Lấy danh sách 3 email mới nhất từ hộp thư đến')">📧 Đọc email mới nhất</button>
+          <button class="preset-btn" onclick="usePreset('Star the repository composiohq/composio on GitHub')">⭐ Star repo Composio</button>
+          <button class="preset-btn" onclick="usePreset('Tìm và tóm tắt bài đăng trong file Excel ở Google Drive')">📂 Tìm file lịch trình Drive</button>
+          <button class="preset-btn" onclick="usePreset('Lấy thông tin tài khoản Facebook Page của tôi')">👤 Thông tin Facebook Page</button>
+          <button class="preset-btn" onclick="usePreset('Hãy kiểm tra xem lịch trình hôm nay trong Google Calendar có gì hot không')">📅 Đọc lịch trình Google Calendar</button>
+        </div>
       </div>
-    </section>
-  </main>
+
+      <div class="sidebar-footer">
+        <div class="user-avatar">AD</div>
+        <div class="user-info">
+          <p>Admin Workspace</p>
+          <span>khoahocai.edu.vn</span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- MAIN CHAT AREA -->
+    <main class="main-workspace">
+      <!-- Nav Header -->
+      <header class="main-header">
+        <div class="header-left">
+          <button class="panel-toggle" onclick="toggleSidebar('leftSidebar')" title="Toggle sidebar">
+            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/>
+            </svg>
+          </button>
+          <div class="model-selector">
+            <span class="model-selector-indicator"></span>
+            <span>OpenRouter: Auto Routing</span>
+          </div>
+        </div>
+        
+        <div class="header-right">
+          <button class="btn-secondary" onclick="clearChat()">Clear Chat</button>
+          <button class="panel-toggle" onclick="toggleSidebar('rightSidebar')" title="Toggle Live Logs">
+            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+            </svg>
+          </button>
+        </div>
+      </header>
+
+      <!-- Chat Screen Scroll area -->
+      <div class="chat-container" id="chatContainer">
+        <div class="chat-content-width" id="chatContent">
+          <!-- Initial Welcome Message -->
+          <div class="msg-wrapper agent">
+            <div class="msg-avatar">AI</div>
+            <div class="msg-bubble">
+              <span class="msg-sender">Agent Console v5.5</span>
+              <div class="msg-text">
+                <p>Xin chào! Tôi đã sẵn sàng hỗ trợ bạn. Hệ thống của chúng ta đã được tích hợp đầy đủ kết nối tới **Gmail, GitHub, Google Drive, Sheets, Calendar, Facebook**.</p>
+                <p>Hãy nhập yêu cầu của bạn bên dưới hoặc click chọn gợi ý trong Thư viện để bắt đầu tự động hóa tác vụ!</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Input Capsule Area -->
+      <div class="input-wrapper">
+        <div class="input-capsule">
+          <div class="input-row">
+            <textarea class="chat-textarea" id="chatTextarea" placeholder="Nhập yêu cầu của bạn cho Agent..." onkeydown="handleKeyDown(event)" rows="1"></textarea>
+            <button class="btn-send" id="sendBtn" onclick="sendPrompt()" disabled>
+              <svg viewBox="0 0 24 24">
+                <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+              </svg>
+            </button>
+          </div>
+          <div class="input-actions">
+            <div class="action-icons-left">
+              <button class="action-btn" title="Thêm tập tin hoặc công cụ" onclick="alert('Tính năng kết nối file bổ sung đang được liên kết...')">
+                <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/>
+                </svg>
+              </button>
+              <button class="action-btn" title="Cập nhật bộ nhớ đệm (Refresh cache)" onclick="refreshCache()">
+                <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"/>
+                </svg>
+              </button>
+            </div>
+            <div style="font-size: 0.65rem; color: var(--text-muted);">Shift + Enter để xuống dòng</div>
+          </div>
+        </div>
+        <div class="footer-note">Composio AI Agent Console có thể gọi công cụ tự động. Hãy xác nhận khi cần thiết.</div>
+      </div>
+    </main>
+
+    <!-- RIGHT SIDEBAR: Live stream logs -->
+    <aside class="right-sidebar" id="rightSidebar">
+      <div class="terminal-header">
+        <span class="terminal-title">Live Server Stream Logs</span>
+        <span style="font-size: 0.65rem; color: var(--primary); font-family: monospace; font-weight: bold;">SSE Connect</span>
+      </div>
+      <div class="terminal-body" id="terminalWindow">
+        <div class="log-item">
+          <span class="log-tag system">[SYSTEM]</span>
+          <span class="log-content">Console đã kết nối. Chờ lệnh từ Client...</span>
+        </div>
+      </div>
+    </aside>
+
+  </div>
 
   <script>
-    const chatMessages = document.getElementById('chatMessages');
-    const chatInput = document.getElementById('chatInput');
+    // Elements references
+    const chatContainer = document.getElementById('chatContainer');
+    const chatContent = document.getElementById('chatContent');
+    const chatTextarea = document.getElementById('chatTextarea');
     const sendBtn = document.getElementById('sendBtn');
     const terminalWindow = document.getElementById('terminalWindow');
+    const leftSidebar = document.getElementById('leftSidebar');
+    const rightSidebar = document.getElementById('rightSidebar');
 
-    function appendLog(timeLabel, text, styleClass = '') {
-      const logEntry = document.createElement('div');
-      logEntry.className = `log-entry ${styleClass}`;
-      
-      const timeSpan = document.createElement('span');
-      timeSpan.className = 'log-time';
-      timeSpan.textContent = `[${timeLabel}]`;
-      
-      const textSpan = document.createElement('span');
-      textSpan.className = 'log-text-content';
-      textSpan.textContent = text;
-      
-      logEntry.appendChild(timeSpan);
-      logEntry.appendChild(textSpan);
-      terminalWindow.appendChild(logEntry);
-      terminalWindow.scrollTop = terminalWindow.scrollHeight;
+    let isThinking = false;
+    let thinkingStartTime = 0;
+    let thinkingTimer = null;
+
+    // Toggle panels for responsiveness
+    function toggleSidebar(id) {
+      const el = document.getElementById(id);
+      el.classList.toggle('hidden');
+      el.classList.toggle('open');
     }
 
-    function appendMessage(role, content) {
-      const msgDiv = document.createElement('div');
-      msgDiv.className = `message ${role}`;
-      msgDiv.innerHTML = content;
-      chatMessages.appendChild(msgDiv);
-      chatMessages.scrollTop = chatMessages.scrollHeight;
-      return msgDiv;
-    }
+    // Auto-expand textarea as user types
+    chatTextarea.addEventListener('input', function() {
+      this.style.height = 'auto';
+      this.style.height = (this.scrollHeight - 12) + 'px';
+      sendBtn.disabled = this.value.trim() === '';
+    });
 
-    function useSuggestion(text) {
-      chatInput.value = text;
-      chatInput.focus();
-    }
-
-    function handleKeyPress(e) {
-      if (e.key === 'Enter') {
-        sendMessage();
+    function handleKeyDown(e) {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendPrompt();
       }
     }
 
-    async function sendMessage() {
-      const prompt = chatInput.value.trim();
-      if (!prompt) return;
+    function usePreset(text) {
+      chatTextarea.value = text;
+      chatTextarea.dispatchEvent(new Event('input'));
+      chatTextarea.focus();
+    }
 
-      chatInput.value = '';
-      chatInput.disabled = true;
+    function clearChat() {
+      chatContent.innerHTML = `
+        <div class="msg-wrapper agent">
+          <div class="msg-avatar">AI</div>
+          <div class="msg-bubble">
+            <span class="msg-sender">Agent Console v5.5</span>
+            <div class="msg-text">
+              <p>Hộp thoại chat đã được dọn sạch. Bạn muốn thực hiện tác vụ tự động hóa nào tiếp theo?</p>
+            </div>
+          </div>
+        </div>
+      `;
+      appendLog('SYSTEM', 'Hộp thoại chat đã được dọn sạch.', 'system');
+    }
+
+    function refreshCache() {
+      appendLog('SYSTEM', 'Đang yêu cầu làm mới cache danh sách công cụ...', 'system');
+      alert('Danh sách công cụ sẽ được nạp lại trong lần gọi tiếp theo!');
+    }
+
+    // Render simple markdown and tags
+    function parseMarkdown(text) {
+      if (!text) return '';
+      return text
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*(.*?)\*/g, '<em>$1</em>')
+        .replace(/`([^`]+)`/g, '<code>$1</code>')
+        .replace(/\n/g, '<br>')
+        .replace(/^- (.*)$/gm, '<li>$1</li>')
+        .replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>');
+    }
+
+    // Log terminal updates
+    function appendLog(tag, content, typeClass = '') {
+      const time = new Date().toLocaleTimeString();
+      const logItem = document.createElement('div');
+      logItem.className = 'log-item';
+      
+      const tagSpan = document.createElement('span');
+      tagSpan.className = `log-tag ${typeClass}`;
+      tagSpan.textContent = `[${tag} ${time}]`;
+      
+      const contentSpan = document.createElement('span');
+      contentSpan.className = 'log-content';
+      contentSpan.textContent = content;
+      
+      logItem.appendChild(tagSpan);
+      logItem.appendChild(contentSpan);
+      
+      terminalWindow.appendChild(logItem);
+      terminalWindow.scrollTop = terminalWindow.scrollHeight;
+    }
+
+    // Toggle collapsible elements
+    function toggleAccordion(el) {
+      el.closest('.thinking-accordion, .tool-accordion').classList.toggle('open');
+    }
+
+    // Main communication handler
+    async function sendPrompt() {
+      const prompt = chatTextarea.value.trim();
+      if (!prompt || isThinking) return;
+
+      isThinking = true;
+      chatTextarea.value = '';
+      chatTextarea.style.height = '24px';
+      chatTextarea.disabled = true;
       sendBtn.disabled = true;
 
-      // Add user message
-      appendMessage('user', prompt);
+      // Append User message to container
+      const userWrapper = document.createElement('div');
+      userWrapper.className = 'msg-wrapper user';
+      userWrapper.innerHTML = `
+        <div class="msg-avatar">ME</div>
+        <div class="msg-bubble">
+          <span class="msg-sender">User</span>
+          <div class="msg-text msg-text-box">${prompt}</div>
+        </div>
+      `;
+      chatContent.appendChild(userWrapper);
+      chatContainer.scrollTop = chatContainer.scrollHeight;
       appendLog('USER', prompt);
 
-      // Create empty Agent response container
-      const agentMsgDiv = appendMessage('agent', '<span style="color:var(--text-muted)">Đang suy nghĩ...</span>');
-      let agentText = '';
-      let activeToolCard = null;
+      // Create Agent wrapper
+      const agentWrapper = document.createElement('div');
+      agentWrapper.className = 'msg-wrapper agent';
+      
+      const avatarDiv = document.createElement('div');
+      avatarDiv.className = 'msg-avatar';
+      avatarDiv.textContent = 'AI';
+      agentWrapper.appendChild(avatarDiv);
+
+      const bubbleDiv = document.createElement('div');
+      bubbleDiv.className = 'msg-bubble';
+      bubbleDiv.innerHTML = `<span class="msg-sender">Agent AI</span>`;
+      
+      // 1. Accumulator for Agent Response text
+      const textResponseContainer = document.createElement('div');
+      textResponseContainer.className = 'msg-text';
+      
+      // 2. Accordion for thinking steps
+      const thinkingAccordion = document.createElement('div');
+      thinkingAccordion.className = 'thinking-accordion open';
+      thinkingAccordion.innerHTML = `
+        <div class="thinking-header" onclick="toggleAccordion(this)">
+          <div class="thinking-title-box">
+            <div class="thinking-spinner" id="thinkingSpinner"></div>
+            <span id="thinkingTitle">Đang suy nghĩ (0s)...</span>
+          </div>
+          <svg class="thinking-arrow" viewBox="0 0 24 24" width="16" height="16">
+            <path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/>
+          </svg>
+        </div>
+        <div class="thinking-content">
+          <div class="thinking-inner" id="thinkingSteps">
+            <div>[0s] Bắt đầu xử lý yêu cầu...</div>
+          </div>
+        </div>
+      `;
+      
+      bubbleDiv.appendChild(thinkingAccordion);
+      bubbleDiv.appendChild(textResponseContainer);
+      agentWrapper.appendChild(bubbleDiv);
+      chatContent.appendChild(agentWrapper);
+      chatContainer.scrollTop = chatContainer.scrollHeight;
+
+      // Start thinking timer
+      thinkingStartTime = Date.now();
+      const thinkingStepsContainer = thinkingAccordion.querySelector('#thinkingSteps');
+      const thinkingTitle = thinkingAccordion.querySelector('#thinkingTitle');
+      const thinkingSpinner = thinkingAccordion.querySelector('#thinkingSpinner');
+      
+      thinkingTimer = setInterval(() => {
+        const elapsed = Math.round((Date.now() - thinkingStartTime) / 1000);
+        thinkingTitle.textContent = `Đang suy nghĩ (${elapsed}s)...`;
+      }, 1000);
+
+      let agentOutputText = '';
+      let activeToolAccordion = null;
 
       try {
-        appendLog('SYSTEM', 'Đang gửi yêu cầu đến serverless API...', 'log-text');
-        
+        appendLog('SYSTEM', 'Gửi request đến Serverless API endpoint...', 'system');
         const response = await fetch('/api/agent', {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json',
+            'Content-Type': 'application/json'
           },
-          body: JSON.stringify({ prompt }),
+          body: JSON.stringify({ prompt })
         });
 
         if (!response.ok) {
-          throw new Error(`Server returned code ${response.status}`);
+          throw new Error(`Máy chủ trả về mã lỗi: ${response.status}`);
         }
 
-        // Đọc stream từ Server-Sent Events (SSE) thủ công qua ReadableStream
         const reader = response.body.getReader();
         const decoder = new TextDecoder('utf-8');
         let buffer = '';
@@ -627,80 +1325,115 @@
 
           buffer += decoder.decode(value, { stream: true });
           const lines = buffer.split('\n\n');
-          buffer = lines.pop(); // giữ lại phần dư chưa hoàn thành dòng
+          buffer = lines.pop(); // Thừa dòng chưa hoàn chỉnh thì giữ lại
 
           for (const line of lines) {
-            if (!line.trim()) continue;
+            if (!line.trim() || !line.startsWith('data: ')) continue;
             
-            // Xử lý tiền tố "data: "
-            if (line.startsWith('data: ')) {
-              try {
-                const parsed = JSON.parse(line.slice(6));
+            try {
+              const data = JSON.parse(line.slice(6));
+              
+              if (data.type === 'log') {
+                // Add step to thinking accordion
+                const stepDiv = document.createElement('div');
+                const elapsed = Math.round((Date.now() - thinkingStartTime) / 1000);
+                stepDiv.textContent = `[${elapsed}s] ${data.message}`;
+                thinkingStepsContainer.appendChild(stepDiv);
+                thinkingStepsContainer.scrollTop = thinkingStepsContainer.scrollHeight;
                 
-                if (parsed.type === 'log') {
-                  appendLog('AGENT-LOG', parsed.message, 'log-success');
-                } else if (parsed.type === 'text') {
-                  if (agentText === '') {
-                    agentMsgDiv.innerHTML = '';
-                  }
-                  agentText += parsed.content;
-                  // Render markdown đơn giản (chuyển đổi code block và newline)
-                  agentMsgDiv.innerHTML = agentText
-                    .replace(/\n/g, '<br>')
-                    .replace(/`([^`]+)`/g, '<code>$1</code>');
-                  chatMessages.scrollTop = chatMessages.scrollHeight;
-                } else if (parsed.type === 'tool-call') {
-                  appendLog('TOOL-CALL', `Kích hoạt công cụ: ${parsed.toolName}`, 'log-text');
-                  
-                  // Tạo tool card hiển thị trên khung chat
-                  activeToolCard = document.createElement('div');
-                  activeToolCard.className = 'tool-card';
-                  activeToolCard.innerHTML = `
-                    <div class="tool-header">
-                      <span class="tool-name">⚙️ Calling Tool: ${parsed.toolName}</span>
-                      <span class="tool-status">Đang thực thi...</span>
+                appendLog('AGENT', data.message);
+              } 
+              else if (data.type === 'text') {
+                // Render agent response text
+                agentOutputText += data.content;
+                textResponseContainer.innerHTML = parseMarkdown(agentOutputText);
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+              } 
+              else if (data.type === 'tool-call') {
+                const elapsed = Math.round((Date.now() - thinkingStartTime) / 1000);
+                appendLog('TOOL-CALL', `Gọi tool: ${data.toolName}`, 'system');
+                
+                // Add step to thinking log
+                const stepDiv = document.createElement('div');
+                stepDiv.textContent = `[${elapsed}s] Gọi công cụ: ${data.toolName}`;
+                thinkingStepsContainer.appendChild(stepDiv);
+
+                // Add visual tool accordion in bubble
+                activeToolAccordion = document.createElement('div');
+                activeToolAccordion.className = 'tool-accordion open';
+                activeToolAccordion.innerHTML = `
+                  <div class="tool-header" onclick="toggleAccordion(this)">
+                    <div class="tool-title-box">
+                      <span>⚙️ Calling: ${data.toolName}</span>
                     </div>
-                    <div class="tool-args">Tham số: ${JSON.stringify(parsed.args, null, 2)}</div>
-                  `;
-                  chatMessages.appendChild(activeToolCard);
-                  chatMessages.scrollTop = chatMessages.scrollHeight;
-                } else if (parsed.type === 'tool-result') {
-                  appendLog('TOOL-RESULT', `Công cụ ${parsed.toolName} trả kết quả thành công.`, 'log-success');
-                  if (activeToolCard) {
-                    const statusSpan = activeToolCard.querySelector('.tool-status');
-                    statusSpan.textContent = 'Success';
-                    statusSpan.className = 'tool-status success';
-                    
-                    const resultBox = document.createElement('div');
-                    resultBox.className = 'tool-result-box';
-                    resultBox.textContent = `Kết quả: ${JSON.stringify(parsed.result, null, 2)}`;
-                    activeToolCard.appendChild(resultBox);
-                    activeToolCard = null;
-                  }
-                } else if (parsed.type === 'error') {
-                  appendLog('ERROR', parsed.message, 'log-error');
-                  if (agentText === '') {
-                    agentMsgDiv.innerHTML = `<span style="color:var(--error)">Lỗi: ${parsed.message}</span>`;
-                  } else {
-                    agentMsgDiv.innerHTML += `<br><span style="color:var(--error)">[Lỗi hệ thống: ${parsed.message}]</span>`;
-                  }
-                } else if (parsed.type === 'done') {
-                  appendLog('SYSTEM', parsed.message, 'log-success');
+                    <span class="tool-badge running">Thực thi...</span>
+                  </div>
+                  <div class="tool-content">
+                    <div class="tool-body">
+                      <div class="tool-code-title">Arguments (Tham số)</div>
+                      <div class="tool-code-block">${JSON.stringify(data.args, null, 2)}</div>
+                    </div>
+                  </div>
+                `;
+                bubbleDiv.insertBefore(activeToolAccordion, textResponseContainer);
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+              } 
+              else if (data.type === 'tool-result') {
+                appendLog('TOOL-RESULT', `Tool ${data.toolName} hoàn thành.`, 'success');
+                if (activeToolAccordion) {
+                  const badge = activeToolAccordion.querySelector('.tool-badge');
+                  badge.textContent = 'Xong';
+                  badge.className = 'tool-badge';
+                  
+                  const body = activeToolAccordion.querySelector('.tool-body');
+                  const titleDiv = document.createElement('div');
+                  titleDiv.className = 'tool-code-title';
+                  titleDiv.style.marginTop = '0.5rem';
+                  titleDiv.textContent = 'Result (Kết quả)';
+                  
+                  const codeDiv = document.createElement('div');
+                  codeDiv.className = 'tool-code-block';
+                  codeDiv.textContent = JSON.stringify(data.result, null, 2);
+                  
+                  body.appendChild(titleDiv);
+                  body.appendChild(codeDiv);
+                  
+                  activeToolAccordion.classList.remove('open'); // close by default on finish
+                  activeToolAccordion = null;
                 }
-              } catch (e) {
-                console.error("Lỗi parse dòng SSE:", e, line);
+              } 
+              else if (data.type === 'error') {
+                appendLog('ERROR', data.message, 'error');
+                const errDiv = document.createElement('div');
+                errDiv.style.color = 'var(--error)';
+                errDiv.style.fontWeight = 'bold';
+                errDiv.textContent = `⚠️ Lỗi: ${data.message}`;
+                textResponseContainer.appendChild(errDiv);
+              } 
+              else if (data.type === 'done') {
+                appendLog('SYSTEM', 'Tác vụ hoàn thành.', 'success');
               }
+            } catch (err) {
+              console.error("Lỗi parse SSE:", err, line);
             }
           }
         }
       } catch (err) {
-        console.error("Lỗi fetch:", err);
-        appendLog('ERROR', err.message, 'log-error');
-        agentMsgDiv.innerHTML = `<span style="color:var(--error)">Lỗi kết nối API: ${err.message}</span>`;
+        console.error("Connection error:", err);
+        appendLog('ERROR', err.message, 'error');
+        textResponseContainer.innerHTML = `<span style="color:var(--error)">Lỗi kết nối máy chủ: ${err.message}</span>`;
       } finally {
-        chatInput.disabled = false;
-        sendBtn.disabled = false;
-        chatInput.focus();
+        // Stop thinking timer
+        clearInterval(thinkingTimer);
+        const totalElapsed = Math.round((Date.now() - thinkingStartTime) / 1000);
+        thinkingTitle.textContent = `Đã suy nghĩ trong ${totalElapsed} giây`;
+        thinkingSpinner.className = 'thinking-spinner done';
+        thinkingAccordion.classList.remove('open'); // Collapse thinking log when done
+
+        isThinking = false;
+        chatTextarea.disabled = false;
+        chatTextarea.focus();
+        sendBtn.disabled = chatTextarea.value.trim() === '';
       }
     }
   </script>
