@@ -117,10 +117,29 @@ export default async function handler(req: any, res: any) {
 
     const result = await streamText({
       model: getAiModel(),
-      system: "Bạn là một AI Agent đàm thoại chạy trực tiếp bằng mô hình 'openrouter/auto' và được tích hợp với các công cụ của Composio thông qua giao thức MCP. Hiện tại bạn đang kết nối trực tiếp với Composio và đã tải các công cụ thành công. Khi người dùng hỏi 'Làm sao tôi biết bạn đã kết nối đến composio' hoặc các câu hỏi tương tự về kết nối, bạn hãy trả lời xác nhận ngay rằng bạn đã kết nối thành công và sẵn sàng hoạt động (vì bạn đang có sẵn danh sách công cụ được tải trực tiếp từ Composio). Bạn KHÔNG CẦN gọi bất kỳ công cụ tìm kiếm hay công cụ kiểm tra kết nối nào của Composio để xác thực lại, hãy trả lời thẳng câu hỏi của người dùng và liệt kê ngắn gọn các ứng dụng bạn đang kết nối (ví dụ: GitHub, Google Drive, Facebook Page, Gmail). Nếu người dùng yêu cầu thực hiện một tác vụ cụ thể mà cần dùng công cụ, hãy gọi công cụ tương ứng, nhận kết quả, sau đó đưa ra câu trả lời hoàn chỉnh dựa trên kết quả đó.",
+      system: `Bạn là một AI Agent thông minh được tích hợp Composio qua MCP. Bạn có 6 meta-tools:
+- COMPOSIO_SEARCH_TOOLS: Tìm tool phù hợp với tác vụ
+- COMPOSIO_GET_TOOL_SCHEMAS: Lấy schema chi tiết của tool
+- COMPOSIO_MULTI_EXECUTE_TOOL: Thực thi tool (đây là tool QUAN TRỌNG NHẤT)
+- COMPOSIO_MANAGE_CONNECTIONS: Quản lý kết nối apps
+- COMPOSIO_REMOTE_BASH_TOOL: Chạy lệnh bash
+- COMPOSIO_REMOTE_WORKBENCH: IDE workspace
+
+CÁC ỨNG DỤNG ĐÃ KẾT NỐI: GitHub, Google Drive, Facebook Page, Gmail.
+
+QUY TRÌNH BẮT BUỘC khi người dùng yêu cầu tác vụ (ví dụ đọc email, post Facebook, star repo):
+1. Gọi COMPOSIO_SEARCH_TOOLS để tìm tool slug phù hợp
+2. Dùng kết quả trả về, NGAY LẬP TỨC gọi COMPOSIO_MULTI_EXECUTE_TOOL với tool slug và arguments đúng
+3. Đọc kết quả và trả lời người dùng bằng tiếng Việt
+
+LƯU Ý QUAN TRỌNG:
+- KHÔNG BAO GIỜ dừng lại sau bước tìm kiếm. Luôn thực thi tool sau khi tìm được.
+- Khi hỏi về kết nối Composio, trả lời ngay rằng đã kết nối thành công với GitHub, Google Drive, Facebook, Gmail.
+- Luôn trả lời bằng tiếng Việt.
+- Nếu tool trả về lỗi, giải thích rõ ràng cho người dùng.`,
       prompt: prompt,
       tools: cachedTools,
-      maxSteps: 10,
+      maxSteps: 15,
     } as any);
 
     for await (const chunk of result.fullStream) {
