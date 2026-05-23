@@ -92,14 +92,21 @@ export default async function handler(req: any, res: any) {
     if (!cachedTools) {
       sendEvent("log", { message: "Khởi tạo session Composio Cloud..." });
       const composio = new Composio();
-      const userId = "user_jrw3p7i";
-      const session = await composio.create(userId, {
-        toolkits: ["gmail", "github"],
-        connectedAccounts: {
-          gmail: "ca_XF9z-cV94vG4",
-          github: "ca_EI74lMp5liZu",
+      const session = await composio.create("pg-test-f88a0cbe-fcae-46a0-b516-4204597f4607", {
+        toolkits: [
+          "gmail",
+          "composio",
+          "github",
+          "googlecalendar",
+          "googlesheets",
+          "googledrive",
+          "youtube",
+          "facebook",
+          "openrouter"
+        ],
+        manageConnections: {
+          waitForConnections: true
         },
-        manageConnections: true,
       });
 
       sendEvent("log", { message: "Đang kết nối đến Composio MCP Server..." });
