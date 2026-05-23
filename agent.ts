@@ -31,8 +31,8 @@ function getAiModel() {
       }
     });
     
-    // Sử dụng model tự động định tuyến miễn phí của OpenRouter
-    return openrouterProvider.chat("openrouter/free");
+    // Sử dụng GLM 4.5 Air miễn phí - model cực kỳ mạnh mẽ hỗ trợ tool calling rất tốt trên OpenRouter
+    return openrouterProvider.chat("z-ai/glm-4.5-air:free");
   }
 }
 
@@ -42,7 +42,14 @@ const userId = "user_jrw3p7i";
 async function main() {
   console.log("Khởi tạo session Composio...");
   // Create a tool router session
-  const session = await composio.create(userId);
+  const session = await composio.create(userId, {
+    toolkits: ["gmail", "github"],
+    connectedAccounts: {
+      gmail: "ca_XF9z-cV94vG4",
+      github: "ca_EI74lMp5liZu",
+    },
+    manageConnections: true,
+  });
 
   console.log("Kết nối đến MCP Server...");
   // Connect to MCP server and get tools
@@ -79,11 +86,13 @@ QUY TRÌNH BẮT BUỘC khi người dùng yêu cầu tác vụ (ví dụ đọc
 
 LƯU Ý QUAN TRỌNG:
 - KHÔNG BAO GIỜ dừng lại sau bước tìm kiếm. Luôn thực thi tool sau khi tìm được.
+- Khi lấy nội dung email chi tiết (ví dụ dùng GMAIL_FETCH_MESSAGE_BY_MESSAGE_ID), luôn truyền tham số format: "metadata" (chỉ lấy subject, snippet và headers) để tránh làm tràn giới hạn token của context.
 - Khi hỏi về kết nối Composio, trả lời ngay rằng đã kết nối thành công với GitHub, Google Drive, Facebook, Gmail.
 - Luôn trả lời bằng tiếng Việt.
 - Nếu tool trả về lỗi, giải thích rõ ràng cho người dùng.`,
     prompt: "Star the composiohq/composio repo on GitHub",
     maxSteps: 15,
+    stopWhen: stepCountIs(15),
     tools,
   } as any);
 

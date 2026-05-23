@@ -4,7 +4,7 @@ dotenv.config();
 import { createAnthropic } from "@ai-sdk/anthropic";
 import { createOpenAI } from "@ai-sdk/openai";
 import { Composio } from "@composio/core";
-import { streamText } from "ai";
+import { streamText, stepCountIs } from "ai";
 import { experimental_createMCPClient as createMCPClient } from "@ai-sdk/mcp";
 
 // Cấu hình Vercel Serverless
@@ -36,8 +36,8 @@ function getAiModel() {
       }
     });
     
-    // Sử dụng model tự động định tuyến miễn phí của OpenRouter
-    return openrouterProvider.chat("openrouter/free");
+    // Sử dụng GLM 4.5 Air miễn phí - model cực kỳ mạnh mẽ hỗ trợ tool calling rất tốt trên OpenRouter
+    return openrouterProvider.chat("z-ai/glm-4.5-air:free");
   }
 }
 
@@ -93,7 +93,14 @@ export default async function handler(req: any, res: any) {
       sendEvent("log", { message: "Khởi tạo session Composio Cloud..." });
       const composio = new Composio();
       const userId = "user_jrw3p7i";
-      const session = await composio.create(userId);
+      const session = await composio.create(userId, {
+        toolkits: ["gmail", "github"],
+        connectedAccounts: {
+          gmail: "ca_XF9z-cV94vG4",
+          github: "ca_EI74lMp5liZu",
+        },
+        manageConnections: true,
+      });
 
       sendEvent("log", { message: "Đang kết nối đến Composio MCP Server..." });
       const transport: any = {
@@ -134,15 +141,18 @@ QUY TRÌNH BẮT BUỘC khi người dùng yêu cầu tác vụ (ví dụ đọc
 
 LƯU Ý QUAN TRỌNG:
 - KHÔNG BAO GIỜ dừng lại sau bước tìm kiếm. Luôn thực thi tool sau khi tìm được.
+- Khi lấy nội dung email chi tiết (ví dụ dùng GMAIL_FETCH_MESSAGE_BY_MESSAGE_ID), luôn truyền tham số format: "metadata" (chỉ lấy subject, snippet và headers) để tránh làm tràn giới hạn token của context.
 - Khi hỏi về kết nối Composio, trả lời ngay rằng đã kết nối thành công với GitHub, Google Drive, Facebook, Gmail.
 - Luôn trả lời bằng tiếng Việt.
 - Nếu tool trả về lỗi, giải thích rõ ràng cho người dùng.`,
       prompt: prompt,
       tools: cachedTools,
       maxSteps: 15,
+      stopWhen: stepCountIs(15),
     } as any);
 
     for await (const chunk of result.fullStream) {
+      console.log(`[AGENT CHUNK] type=${chunk.type}`, chunk.type === "text-delta" ? chunk.text : (chunk.type === "tool-call" || chunk.type === "tool-result" ? JSON.stringify(chunk) : ""));
       if (chunk.type === "text-delta") {
         sendEvent("text", { content: chunk.text });
       } else if (chunk.type === "tool-call") {
