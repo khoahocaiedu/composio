@@ -53,7 +53,67 @@ export default async function handler(req: any, res: any) {
     return;
   }
 
-  const { prompt, refresh } = req.body;
+  // Xử lý action Git Push trước tiên (không dùng SSE)
+  if (req.body.action === 'github-push') {
+    const { filePath, fileContent, commitMessage, pat } = req.body;
+    const githubToken = pat || process.env.GITHUB_PAT || process.env.GITHUB_TOKEN;
+    
+    if (!githubToken) {
+      res.status(400).json({ error: "Thiếu GitHub Personal Access Token (PAT). Vui lòng cấu hình trong file .env hoặc nhập trên giao diện." });
+      return;
+    }
+    
+    try {
+      const repoOwner = "khoahocaiedu";
+      const repoName = "composio";
+      const url = `https://api.github.com/repos/${repoOwner}/${repoName}/contents/${filePath}`;
+      
+      let sha: string | undefined = undefined;
+      const checkRes = await fetch(url, {
+        headers: {
+          "Accept": "application/vnd.github+json",
+          "Authorization": `Bearer ${githubToken}`,
+          "X-GitHub-Api-Version": "2022-11-28"
+        }
+      });
+      
+      if (checkRes.status === 200) {
+        const fileData = await checkRes.json();
+        sha = fileData.sha;
+      }
+      
+      const base64Content = Buffer.from(fileContent).toString("base64");
+      
+      const putRes = await fetch(url, {
+        method: "PUT",
+        headers: {
+          "Accept": "application/vnd.github+json",
+          "Authorization": `Bearer ${githubToken}`,
+          "Content-Type": "application/json",
+          "X-GitHub-Api-Version": "2022-11-28"
+        },
+        body: JSON.stringify({
+          message: commitMessage,
+          content: base64Content,
+          sha: sha
+        })
+      });
+      
+      const putData = await putRes.json();
+      
+      if (!putRes.ok) {
+        throw new Error(putData.message || `Lỗi GitHub API ${putRes.status}`);
+      }
+      
+      res.status(200).json({ success: true, sha: putData.commit.sha });
+    } catch (err: any) {
+      console.error("Lỗi khi push GitHub:", err);
+      res.status(500).json({ error: err.message || "Lỗi hệ thống khi push lên GitHub" });
+    }
+    return;
+  }
+
+  const { prompt, refresh, mode } = req.body;
   if (!prompt) {
     res.status(400).json({ error: "Missing prompt in request body." });
     return;
@@ -76,12 +136,15 @@ export default async function handler(req: any, res: any) {
   };
 
   try {
-    // Kiểm tra các biến môi trường trước khi thực thi
-    if (!process.env.COMPOSIO_API_KEY) {
+    const isDirect = mode === 'direct';
+
+    // Chỉ kiểm tra COMPOSIO_API_KEY khi không phải chế độ chat trực tiếp
+    if (!isDirect && !process.env.COMPOSIO_API_KEY) {
       throw new Error(
         "Thiếu biến môi trường COMPOSIO_API_KEY. Vui lòng thêm COMPOSIO_API_KEY trong Cấu hình Biến môi trường (Environment Variables) trên Vercel Dashboard của bạn, sau đó thực hiện Redeploy dự án để áp dụng."
       );
     }
+    
     const useAnthropic = !!process.env.ANTHROPIC_API_KEY;
     if (!useAnthropic && !process.env.OPENROUTER_API_KEY) {
       throw new Error(
@@ -89,49 +152,59 @@ export default async function handler(req: any, res: any) {
       );
     }
 
-    if (!cachedTools) {
-      sendEvent("log", { message: "Khởi tạo session Composio Cloud..." });
-      const composio = new Composio();
-      const session = await composio.create("pg-test-f88a0cbe-fcae-46a0-b516-4204597f4607", {
-        toolkits: [
-          "gmail",
-          "composio",
-          "github",
-          "googlecalendar",
-          "googlesheets",
-          "googledrive",
-          "youtube",
-          "facebook",
-          "openrouter"
-        ],
-        manageConnections: {
-          waitForConnections: true
-        },
-      });
+    if (!isDirect) {
+      if (!cachedTools) {
+        sendEvent("log", { message: "Khởi tạo session Composio Cloud..." });
+        const composio = new Composio();
+        const session = await composio.create("pg-test-f88a0cbe-fcae-46a0-b516-4204597f4607", {
+          toolkits: [
+            "gmail",
+            "composio",
+            "github",
+            "googlecalendar",
+            "googlesheets",
+            "googledrive",
+            "youtube",
+            "facebook",
+            "openrouter"
+          ],
+          manageConnections: {
+            waitForConnections: true
+          },
+        });
 
-      sendEvent("log", { message: "Đang kết nối đến Composio MCP Server..." });
-      const transport: any = {
-        type: session.mcp.type,
-        url: session.mcp.url,
-      };
-      if (session.mcp.headers) {
-        transport.headers = session.mcp.headers;
+        sendEvent("log", { message: "Đang kết nối đến Composio MCP Server..." });
+        const transport: any = {
+          type: session.mcp.type,
+          url: session.mcp.url,
+        };
+        if (session.mcp.headers) {
+          transport.headers = session.mcp.headers;
+        }
+        const client = await createMCPClient({ transport });
+
+        sendEvent("log", { message: "Đang tải danh sách công cụ..." });
+        cachedTools = await client.tools();
+        cachedToolCount = Object.keys(cachedTools).length;
+        sendEvent("log", { message: `Đã tải thành công ${cachedToolCount} công cụ.` });
+      } else {
+        sendEvent("log", { message: `Sử dụng ${cachedToolCount} công cụ từ bộ nhớ đệm (Cache).` });
       }
-      const client = await createMCPClient({ transport });
-
-      sendEvent("log", { message: "Đang tải danh sách công cụ..." });
-      cachedTools = await client.tools();
-      cachedToolCount = Object.keys(cachedTools).length;
-      sendEvent("log", { message: `Đã tải thành công ${cachedToolCount} công cụ.` });
-    } else {
-      sendEvent("log", { message: `Sử dụng ${cachedToolCount} công cụ từ bộ nhớ đệm (Cache).` });
     }
 
     sendEvent("log", { message: "Đang kích hoạt mô hình AI và thực thi tác vụ..." });
 
-    const result = await streamText({
-      model: getAiModel(),
-      system: `Bạn là một AI Agent thông minh được tích hợp Composio qua MCP. Bạn có 6 meta-tools:
+    const systemPrompt = isDirect 
+      ? `Bạn là một AI Agent thông minh hỗ trợ phát triển công cụ tự động (Tool Mod Mode). 
+Nhiệm vụ của bạn là hỗ trợ người dùng viết code, kịch bản tự động hóa (Node.js, TypeScript, Python, v.v.) để đẩy lên kho lưu trữ.
+Khi sinh ra code, hãy luôn cấu trúc code rõ ràng trong các khối code (fenced code blocks) đi kèm ngôn ngữ phù hợp.
+Khuyên khích bạn thêm chú thích ở dòng đầu tiên của khối code để chỉ định đường dẫn tệp đề xuất, ví dụ:
+// filepath: src/tools/my_tool.ts
+hoặc
+# filepath: src/tools/my_tool.py
+Điều này giúp hệ thống tự động nhận diện đường dẫn tệp khi người dùng bấm nút push lên GitHub.
+Trả lời bằng tiếng Việt ngắn gọn, tập trung vào cấu trúc code.`
+      : `Bạn là một AI Agent thông minh được tích hợp Composio qua MCP. Bạn có 6 meta-tools:
 - COMPOSIO_SEARCH_TOOLS: Tìm tool phù hợp với tác vụ
 - COMPOSIO_GET_TOOL_SCHEMAS: Lấy schema chi tiết của tool
 - COMPOSIO_MULTI_EXECUTE_TOOL: Thực thi tool (đây là tool QUAN TRỌNG NHẤT)
@@ -151,11 +224,15 @@ LƯU Ý QUAN TRỌNG:
 - Khi lấy nội dung email chi tiết (ví dụ dùng GMAIL_FETCH_MESSAGE_BY_MESSAGE_ID), luôn truyền tham số format: "metadata" (chỉ lấy subject, snippet và headers) để tránh làm tràn giới hạn token của context.
 - Khi hỏi về kết nối Composio, trả lời ngay rằng đã kết nối thành công với GitHub, Google Drive, Facebook, Gmail.
 - Luôn trả lời bằng tiếng Việt.
-- Nếu tool trả về lỗi, giải thích rõ ràng cho người dùng.`,
+- Nếu tool trả về lỗi, giải thích rõ ràng cho người dùng.`;
+
+    const result = await streamText({
+      model: getAiModel(),
+      system: systemPrompt,
       prompt: prompt,
-      tools: cachedTools,
-      maxSteps: 15,
-      stopWhen: stepCountIs(15),
+      tools: isDirect ? undefined : cachedTools,
+      maxSteps: isDirect ? 1 : 15,
+      stopWhen: isDirect ? undefined : stepCountIs(15),
     } as any);
 
     for await (const chunk of result.fullStream) {

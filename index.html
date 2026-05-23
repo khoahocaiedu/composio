@@ -911,6 +911,96 @@
       }
     }
 
+    /* Tabs & GitHub config & Code blocks styles */
+    .header-tabs {
+      display: flex;
+      background: rgba(255, 255, 255, 0.03);
+      padding: 0.2rem;
+      border-radius: 12px;
+      border: 1px solid var(--panel-border);
+    }
+    .tab-btn {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      padding: 0.4rem 1rem;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 0.8rem;
+      font-weight: 600;
+      transition: all 0.2s ease;
+      font-family: var(--font-main);
+    }
+    .tab-btn.active {
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text-main);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+    .tab-btn:hover:not(.active) {
+      color: var(--text-main);
+    }
+    .sidebar-input {
+      width: 100%;
+      background: rgba(0, 0, 0, 0.2);
+      border: 1px solid var(--panel-border);
+      border-radius: 8px;
+      padding: 0.5rem 0.75rem;
+      color: var(--text-main);
+      font-size: 0.75rem;
+      outline: none;
+      font-family: var(--font-main);
+      transition: border-color 0.2s ease;
+    }
+    .sidebar-input:focus {
+      border-color: var(--secondary);
+    }
+    .code-block-container {
+      margin: 1rem 0;
+      background: #141418;
+      border: 1px solid var(--panel-border);
+      border-radius: 8px;
+      overflow: hidden;
+      width: 100%;
+    }
+    .code-block-header {
+      background: rgba(255, 255, 255, 0.03);
+      padding: 0.4rem 0.8rem;
+      border-bottom: 1px solid var(--panel-border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .code-lang {
+      font-size: 0.72rem;
+      font-family: 'Fira Code', monospace;
+      color: var(--text-muted);
+      text-transform: uppercase;
+    }
+    .push-git-btn {
+      background: rgba(16, 185, 129, 0.1);
+      border: 1px solid rgba(16, 185, 129, 0.2);
+      color: var(--success);
+      font-size: 0.7rem;
+      padding: 0.25rem 0.5rem;
+      border-radius: 6px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      transition: all 0.2s ease;
+      font-family: var(--font-main);
+      font-weight: 600;
+    }
+    .push-git-btn:hover {
+      background: rgba(16, 185, 129, 0.2);
+      border-color: var(--success);
+    }
+    .code-block-container pre {
+      margin: 0 !important;
+      border: none !important;
+      border-radius: 0 !important;
+      padding: 0.8rem;
+    }
+
     /* Scrollbar styling */
     ::-webkit-scrollbar {
       width: 4px;
@@ -1004,6 +1094,17 @@
         </div>
       </div>
 
+      <!-- GitHub Config Section -->
+      <div class="sidebar-section" id="githubConfigSection">
+        <div class="section-title">
+          <span>GitHub Setup (Tool Mod)</span>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+          <input type="password" class="sidebar-input" id="githubPatInput" placeholder="GitHub PAT (ghp_...)" onchange="saveGithubPat(this.value)">
+          <div style="font-size: 0.65rem; color: var(--text-muted); line-height: 1.4;">Lưu trữ an toàn trên trình duyệt của bạn (localStorage).</div>
+        </div>
+      </div>
+
       <!-- Prompt Presets / Library -->
       <div class="sidebar-section" style="flex: 1; overflow-y: auto;">
         <div class="section-title">
@@ -1037,6 +1138,10 @@
               <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/>
             </svg>
           </button>
+          <div class="header-tabs">
+            <button class="tab-btn active" id="tabComposio" onclick="switchMode('composio')">Composio Workspace</button>
+            <button class="tab-btn" id="tabDirect" onclick="switchMode('direct')">Tool Mod Mode</button>
+          </div>
           <div class="model-selector">
             <span class="model-selector-indicator"></span>
             <span>OpenRouter: Auto Routing</span>
@@ -1117,6 +1222,27 @@
 
   </div>
 
+  <!-- Modal for GitHub Push -->
+  <div id="gitPushModal" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.7); z-index:100; align-items:center; justify-content:center;">
+    <div style="background:var(--sidebar-bg); border:1px solid var(--panel-border); border-radius:16px; padding:1.5rem; width:100%; max-width:450px; display:flex; flex-direction:column; gap:1rem; box-shadow:0 20px 50px rgba(0,0,0,0.6);">
+      <h3 style="font-family:var(--font-main); font-size:1.1rem; color:var(--text-main); font-weight:600; display:flex; align-items:center; gap:0.5rem;">
+        <span>🚀 Push Code to GitHub</span>
+      </h3>
+      <div style="display:flex; flex-direction:column; gap:0.4rem;">
+        <label style="font-size:0.75rem; color:var(--text-muted); font-weight:600;">File Path (Đường dẫn tệp)</label>
+        <input type="text" id="gitFilePath" class="sidebar-input" style="padding:0.6rem; font-size:0.8rem;" placeholder="e.g. src/tools/my_tool.ts">
+      </div>
+      <div style="display:flex; flex-direction:column; gap:0.4rem;">
+        <label style="font-size:0.75rem; color:var(--text-muted); font-weight:600;">Commit Message (Thông điệp commit)</label>
+        <input type="text" id="gitCommitMessage" class="sidebar-input" style="padding:0.6rem; font-size:0.8rem;" placeholder="e.g. feat: add custom tool my_tool">
+      </div>
+      <div style="display:flex; gap:0.75rem; justify-content:flex-end; margin-top:0.5rem;">
+        <button class="btn-secondary" onclick="closeGitPushModal()" style="padding:0.5rem 1rem;">Hủy</button>
+        <button class="btn-secondary" id="gitConfirmPushBtn" onclick="confirmGitPush()" style="background:var(--primary); color:#fff; border-color:transparent; padding:0.5rem 1rem; box-shadow:0 0 15px var(--primary-glow);">Push lên Git</button>
+      </div>
+    </div>
+  </div>
+
   <script>
     // Elements references
     const chatContainer = document.getElementById('chatContainer');
@@ -1130,6 +1256,16 @@
     let isThinking = false;
     let thinkingStartTime = 0;
     let thinkingTimer = null;
+    let currentMode = 'composio'; // 'composio' or 'direct'
+    let selectedCodeBlockId = null;
+
+    // Load saved PAT on startup
+    document.addEventListener('DOMContentLoaded', () => {
+      const savedPat = localStorage.getItem('github_pat');
+      if (savedPat) {
+        document.getElementById('githubPatInput').value = savedPat;
+      }
+    });
 
     // Toggle panels for responsiveness
     function toggleSidebar(id) {
@@ -1178,9 +1314,192 @@
       alert('Danh sách công cụ sẽ được nạp lại trong lần gọi tiếp theo!');
     }
 
-    // Render simple markdown and tags
-    function parseMarkdown(text) {
+    // Switch between Composio Workspace and Tool Mod Mode
+    function switchMode(mode) {
+      currentMode = mode;
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      
+      const githubSection = document.getElementById('githubConfigSection');
+      const connListSection = document.querySelector('.left-sidebar .sidebar-section:nth-child(2)');
+      
+      if (mode === 'composio') {
+        document.getElementById('tabComposio').classList.add('active');
+        document.querySelector('.model-selector span:last-child').textContent = 'OpenRouter: Auto Routing (Composio)';
+        
+        // Highlight active connections, dim git setup
+        connListSection.style.opacity = '1';
+        githubSection.style.border = 'none';
+        
+        appendLog('SYSTEM', 'Đã chuyển sang chế độ Composio Workspace.', 'system');
+      } else {
+        document.getElementById('tabDirect').classList.add('active');
+        document.querySelector('.model-selector span:last-child').textContent = 'OpenRouter: Direct Chat (Tool Mod)';
+        
+        // Highlight git setup, dim active connections
+        connListSection.style.opacity = '0.5';
+        githubSection.style.border = '1px solid rgba(99, 102, 241, 0.2)';
+        githubSection.style.borderRadius = '8px';
+        githubSection.style.background = 'rgba(99, 102, 241, 0.02)';
+        
+        appendLog('SYSTEM', 'Đã chuyển sang chế độ Tool Mod (Direct OpenRouter).', 'system');
+      }
+    }
+
+    function saveGithubPat(value) {
+      localStorage.setItem('github_pat', value.trim());
+      appendLog('SYSTEM', 'Đã lưu GitHub PAT cục bộ.', 'system');
+    }
+
+    function openGitPushModal(blockId) {
+      selectedCodeBlockId = blockId;
+      const codeElement = document.getElementById(blockId);
+      const codeContent = codeElement ? codeElement.innerText : '';
+      
+      // Smart path extraction: look for filepath in comment (e.g. "// filepath: src/tools/test.ts" or "# filepath: src/tools/test.py")
+      let suggestedPath = '';
+      const pathMatch = codeContent.match(/(?:\/\/\s*filepath:\s*|#\s*filepath:\s*)([^\s\n]+)/i);
+      if (pathMatch && pathMatch[1]) {
+        suggestedPath = pathMatch[1].trim();
+      } else {
+        // Fallback guess based on language or content
+        const container = codeElement.closest('.code-block-container');
+        const lang = container ? container.querySelector('.code-lang').textContent.toLowerCase() : '';
+        if (lang.includes('typescript') || lang.includes('ts')) {
+          suggestedPath = 'src/tools/custom_tool.ts';
+        } else if (lang.includes('python') || lang.includes('py')) {
+          suggestedPath = 'src/tools/custom_tool.py';
+        } else {
+          suggestedPath = 'custom_tool.txt';
+        }
+      }
+      
+      document.getElementById('gitFilePath').value = suggestedPath;
+      document.getElementById('gitCommitMessage').value = 'feat: add custom tool ' + suggestedPath.split('/').pop();
+      document.getElementById('gitPushModal').style.display = 'flex';
+    }
+
+    function closeGitPushModal() {
+      document.getElementById('gitPushModal').style.display = 'none';
+      selectedCodeBlockId = null;
+    }
+
+    async function confirmGitPush() {
+      if (!selectedCodeBlockId) return;
+      
+      const filePath = document.getElementById('gitFilePath').value.trim();
+      const commitMessage = document.getElementById('gitCommitMessage').value.trim();
+      const codeContent = document.getElementById(selectedCodeBlockId).innerText;
+      
+      // Get PAT from input or localStorage
+      const pat = document.getElementById('githubPatInput').value.trim() || localStorage.getItem('github_pat') || '';
+      
+      if (!filePath) {
+        alert('Vui lòng nhập đường dẫn tệp!');
+        return;
+      }
+      if (!commitMessage) {
+        alert('Vui lòng nhập thông điệp commit!');
+        return;
+      }
+      
+      const confirmPushBtn = document.getElementById('gitConfirmPushBtn');
+      confirmPushBtn.disabled = true;
+      confirmPushBtn.textContent = 'Đang push...';
+      
+      try {
+        appendLog('SYSTEM', `Đang chuẩn bị push tệp ${filePath} lên GitHub...`, 'system');
+        
+        const response = await fetch('/api/agent', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            action: 'github-push',
+            filePath,
+            fileContent: codeContent,
+            commitMessage,
+            pat
+          }),
+        });
+        
+        const result = await response.json();
+        
+        if (!response.ok) {
+          throw new Error(result.error || `Lỗi server ${response.status}`);
+        }
+        
+        appendLog('SYSTEM', `Push thành công! Commit SHA: ${result.sha.substring(0, 7)}`, 'success');
+        alert(`Đã push tệp lên GitHub thành công!\nCommit SHA: ${result.sha.substring(0, 7)}`);
+        closeGitPushModal();
+      } catch (err) {
+        console.error("Lỗi push Git:", err);
+        appendLog('ERROR', `Push thất bại: ${err.message}`, 'error');
+        alert(`Lỗi khi push lên Git: ${err.message}`);
+      } finally {
+        confirmPushBtn.disabled = false;
+        confirmPushBtn.textContent = 'Push lên Git';
+      }
+    }
+
+    // Streaming-safe Markdown code block parser
+    function renderMarkdown(text) {
       if (!text) return '';
+      
+      const blocks = text.split('```');
+      let html = '';
+      
+      for (let i = 0; i < blocks.length; i++) {
+        if (i % 2 === 0) {
+          // Even indexes are normal text
+          html += parseSimpleText(blocks[i]);
+        } else {
+          // Odd indexes are code blocks (fenced)
+          const block = blocks[i];
+          // Extract language if present
+          const firstNewline = block.indexOf('\n');
+          let language = 'plaintext';
+          let codeContent = block;
+          
+          if (firstNewline !== -1) {
+            const langCandidate = block.substring(0, firstNewline).trim();
+            if (langCandidate.length > 0 && langCandidate.length < 15 && !langCandidate.includes(' ')) {
+              language = langCandidate;
+              codeContent = block.substring(firstNewline + 1);
+            }
+          }
+          
+          // Clean code content for rendering in HTML
+          const escapedCode = codeContent
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;");
+            
+          const blockId = 'code_block_' + i + '_' + Math.random().toString(36).substring(2, 6);
+          const isUnfinished = (i === blocks.length - 1);
+          
+          html += `
+            <div class="code-block-container" data-id="${blockId}">
+              <div class="code-block-header">
+                <span class="code-lang">${language} ${isUnfinished ? '(Đang viết...)' : ''}</span>
+                ${!isUnfinished ? `
+                <button class="push-git-btn" onclick="openGitPushModal('${blockId}')">
+                  <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" style="margin-right:4px;">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5h10.5a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0017.25 4.5H6.75A2.25 2.25 0 004.5 6.75v10.5a2.25 2.25 0 002.25 2.25z"/>
+                  </svg>
+                  Push to Git
+                </button>
+                ` : ''}
+              </div>
+              <pre><code class="language-${language}" id="${blockId}">${escapedCode}</code></pre>
+            </div>
+          `;
+        }
+      }
+      return html;
+    }
+
+    function parseSimpleText(text) {
       return text
         .replace(/&/g, "&amp;")
         .replace(/</g, "&lt;")
@@ -1308,7 +1627,10 @@
           headers: {
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify({ prompt })
+          body: JSON.stringify({ 
+            prompt,
+            mode: currentMode
+          })
         });
 
         if (!response.ok) {
@@ -1346,7 +1668,7 @@
               else if (data.type === 'text') {
                 // Render agent response text
                 agentOutputText += data.content;
-                textResponseContainer.innerHTML = parseMarkdown(agentOutputText);
+                textResponseContainer.innerHTML = renderMarkdown(agentOutputText);
                 chatContainer.scrollTop = chatContainer.scrollHeight;
               } 
               else if (data.type === 'tool-call') {
